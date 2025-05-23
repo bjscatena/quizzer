@@ -1,0 +1,122 @@
+[
+    {
+        "chapter": 1,
+        "question": "Qual é a principal estrutura de dados que a maioria dos bancos de dados SQL relacionais utiliza para implementar índices?",
+        "options": [
+            "A) Hash Table",
+            "B) B-Tree (ou suas variações como B+Tree)",
+            "C) Linked List",
+            "D) Red-Black Tree"
+        ],
+        "correct_index": 1,
+        "explanation": "B-Trees (e suas variações como B+Trees) são eficientes para buscas de valores exatos e varreduras de intervalo (range scans), sendo a estrutura padrão para índices devido ao seu balanceamento e performance logarítmica. 🌳"
+    },
+    {
+        "chapter": 1,
+        "question": "O que um 'nó folha' (leaf node) em um índice B-Tree normalmente contém, além do valor da chave indexada?",
+        "options": [
+            "A) Apenas ponteiros para outros nós folha.",
+            "B) Um ponteiro para a linha de dados real na tabela (ex: ROWID) e, em B+Trees, ponteiros para os nós folha vizinhos.",
+            "C) Uma cópia completa de todas as outras colunas da tabela.",
+            "D) Metadados sobre a estrutura da B-Tree."
+        ],
+        "correct_index": 1,
+        "explanation": "Os nós folha de um índice B-Tree (especialmente B+Tree) contêm os valores das chaves indexadas, um ponteiro (como ROWID) para a localização da linha completa na tabela (heap table) e ponteiros para os nós folha adjacentes para facilitar varreduras de intervalo. 🍃"
+    },
+    {
+        "chapter": 1,
+        "question": "O que significa o termo 'SARGable' (Search Argument Able) em relação a um predicado na cláusula WHERE?",
+        "options": [
+            "A) Um predicado que só pode ser usado com argumentos do tipo string.",
+            "B) Um predicado que é muito complexo para o otimizador entender.",
+            "C) Um predicado que está formulado de tal maneira que o banco de dados pode usar um índice para satisfazê-lo eficientemente.",
+            "D) Um predicado que garante um 'Index-Only Scan'."
+        ],
+        "correct_index": 2,
+        "explanation": "Um predicado SARGable (Search ARGument Able) permite que o mecanismo de busca do banco de dados use um índice para restringir o conjunto de linhas a serem examinadas, em vez de fazer um table scan. 👍"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual das seguintes condições na cláusula WHERE é MENOS provável de ser SARGable e, portanto, impedir o uso eficiente de um índice padrão na coluna `data_evento`?",
+        "options": [
+            "A) `WHERE data_evento = '2024-01-15'`",
+            "B) `WHERE data_evento BETWEEN '2024-01-01' AND '2024-01-31'`",
+            "C) `WHERE TO_CHAR(data_evento, 'YYYY') = '2024'`",
+            "D) `WHERE data_evento > '2024-01-01'`"
+        ],
+        "correct_index": 2,
+        "explanation": "Aplicar uma função (como TO_CHAR) a uma coluna indexada no lado esquerdo do predicado geralmente torna o predicado non-SARGable para um índice padrão nessa coluna, pois o banco teria que calcular a função para cada linha antes de comparar. FUNC(coluna) = valor 🚫"
+    },
+    {
+        "chapter": 1,
+        "question": "O que é um 'Table Access by Index ROWID' (ou equivalente) no plano de execução de uma consulta?",
+        "options": [
+            "A) Uma operação que indica que a consulta foi totalmente satisfeita pelo índice (Index-Only Scan).",
+            "B) Uma operação onde o banco de dados usa o ROWID (ou ponteiro similar) obtido de uma varredura de índice para localizar e buscar a linha completa na tabela principal.",
+            "C) Um erro que ocorre quando o ROWID não é encontrado.",
+            "D) Uma operação que sempre é mais rápida que um Full Table Scan."
+        ],
+        "correct_index": 1,
+        "explanation": "Após encontrar uma entrada de chave em um índice, se a consulta precisa de colunas não presentes no índice, o banco de dados usa o ponteiro (ROWID) para acessar a tabela principal e buscar o restante dos dados da linha. 🔍"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual o principal benefício de um índice em termos de performance de `SELECT`?",
+        "options": [
+            "A) Reduzir o espaço em disco usado pela tabela.",
+            "B) Acelerar operações de `INSERT` e `UPDATE`.",
+            "C) Reduzir o número de blocos de dados que precisam ser lidos do disco para satisfazer uma consulta.",
+            "D) Garantir a atomicidade das transações."
+        ],
+        "correct_index": 2,
+        "explanation": "Os índices permitem que o banco de dados localize rapidamente as linhas que correspondem aos critérios de uma consulta sem ter que varrer a tabela inteira, reduzindo significativamente o I/O de disco e o tempo de resposta. 💾➡️⚡"
+    },
+    {
+        "chapter": 1,
+        "question": "Se uma consulta `SELECT col1, col2 FROM tabela WHERE col3 = 100` é executada, e existe um índice apenas na `col3`, qual é um resultado provável no plano de execução se `col1` e `col2` não estiverem nesse índice?",
+        "options": [
+            "A) Full Table Scan, porque `col1` e `col2` não estão no índice.",
+            "B) Index Scan em `col3` seguido de Table Access by ROWID para buscar `col1` e `col2`.",
+            "C) Index-Only Scan, pois a condição `WHERE` usa um índice.",
+            "D) O banco criará um índice temporário em `col1` e `col2`."
+        ],
+        "correct_index": 1,
+        "explanation": "O índice em `col3` será usado para encontrar as linhas relevantes (Index Scan). Como `col1` e `col2` não estão nesse índice, o banco precisará acessar a tabela principal (Table Access) para obter esses valores para as linhas encontradas. 🎯"
+    },
+    {
+        "chapter": 1,
+        "question": "O que é 'seletividade' (selectivity) de um valor em uma coluna indexada?",
+        "options": [
+            "A) A capacidade de um índice selecionar todas as colunas da tabela.",
+            "B) Uma medida de quão poucas linhas um valor específico da coluna indexada retorna; alta seletividade significa que o valor é raro e retorna poucas linhas.",
+            "C) A garantia de que a consulta `SELECT` usará o índice, independentemente do valor.",
+            "D) O número de colunas incluídas em um índice."
+        ],
+        "correct_index": 1,
+        "explanation": "Alta seletividade (um valor que aparece em poucas linhas) torna o índice muito eficaz para esse valor, pois ele restringe drasticamente o conjunto de resultados. Baixa seletividade (um valor que aparece em muitas linhas) torna o índice menos útil para esse valor específico. 📊"
+    },
+    {
+        "chapter": 1,
+        "question": "A profundidade de uma B-Tree (número de níveis do topo à folha) geralmente cresce de que forma em relação ao número de linhas na tabela?",
+        "options": [
+            "A) Linearmente (ex: dobrar as linhas dobra a profundidade).",
+            "B) Exponencialmente (ex: dobrar as linhas quadruplica a profundidade).",
+            "C) Logaritmicamente (ex: a profundidade cresce muito lentamente, mesmo com um grande aumento de linhas).",
+            "D) Permanece constante após a B-Tree atingir 3 níveis."
+        ],
+        "correct_index": 2,
+        "explanation": "A profundidade de uma B-Tree cresce logaritmicamente com o número de entradas. Isso é fundamental para sua eficiência, pois mesmo para tabelas com milhões ou bilhões de linhas, a profundidade do índice permanece pequena (geralmente 3 a 5 níveis), garantindo buscas rápidas. 🐢➡️🐇"
+    },
+    {
+        "chapter": 1,
+        "question": "Considerando um índice na coluna `status_pedido` (que pode ter valores como 'PENDENTE', 'PAGO', 'ENVIADO', 'CANCELADO'), qual tipo de consulta se beneficiaria MENOS desse índice se a distribuição de status for muito desigual (ex: 90% dos pedidos estão como 'ENVIADO')?",
+        "options": [
+            "A) `WHERE status_pedido = 'PENDENTE'` (supondo que 'PENDENTE' é raro)",
+            "B) `WHERE status_pedido = 'ENVIADO'` (supondo que 'ENVIADO' é muito comum)",
+            "C) `WHERE status_pedido IN ('PENDENTE', 'PAGO')` (supondo que ambos são raros)",
+            "D) Todas as consultas se beneficiariam igualmente."
+        ],
+        "correct_index": 1,
+        "explanation": "Um índice é menos eficaz (e o otimizador pode até optar por não usá-lo) para buscar valores de baixa seletividade, ou seja, valores que aparecem em uma grande porcentagem das linhas da tabela. Se 'ENVIADO' é muito comum, buscar por ele pode resultar na leitura de grande parte da tabela de qualquer maneira. 📉"
+    }
+]
