@@ -3,50 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quizzer</title>
+    <title>Quiz de Livros Técnicos</title>
     <style>
         body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 700px; width: 100%; margin: auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #333; }
         h2 { color: #555; }
-        .quiz-selector-container { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; text-align: center;}
-        .quiz-selector-container label { font-weight: bold; margin-right: 10px;}
-        .quiz-selector-container select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px; }
-        .quiz-selector-container button { padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .quiz-selector-container button:hover { background-color: #218838; }
+        .selector-container { margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+        .selector-container label { font-weight: bold; margin-right: 10px; display: block; margin-bottom: 5px;}
+        .selector-container select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-bottom:10px; width: 100%; max-width: 400px;}
+        .start-button-container button { display: block; width: 100%; max-width: 200px; margin: 10px auto 0 auto; padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; }
+        .start-button-container button:hover:not(:disabled) { background-color: #218838; }
+        .start-button-container button:disabled { background-color: #6c757d; opacity: 0.7; cursor: not-allowed;}
+        
         .question-text { margin-bottom: 20px; font-size: 1.2em; }
         .options button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left; }
         .options button:hover:not(:disabled) { background-color: #0056b3; }
         .options button.correct { background-color: #28a745 !important; border-color: #1e7e34 !important; }
         .options button.incorrect { background-color: #dc3545 !important; border-color: #b21f2d !important; }
         .options button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; }
+        
         .feedback { margin-top: 20px; padding: 10px; border-radius: 4px; }
         .feedback.correct-feedback { background-color: #e9f7ef; border: 1px solid #28a745; color: #155724; }
         .feedback.incorrect-feedback { background-color: #f8d7da; border: 1px solid #dc3545; color: #721c24; }
         .explanation { margin-top: 10px; font-style: italic; color: #555; }
+        
         .navigation button { padding: 10px 20px; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; }
         .navigation button:hover { background-color: #138496; }
+        
         .score { text-align: center; font-size: 1.3em; margin-top: 30px; }
-        #quiz-area { display: none; } /* Esconde a área do quiz inicialmente */
-        #loading-message { text-align: center; margin-top: 20px; color: #555;}
-        #error-message { text-align: center; margin-top: 10px; color: red; font-weight: bold;}
+        #quiz-area { display: none; } 
+        #chapter-selector-container { display: none; } 
+        #start-button-container { display: none; }
+        #loading-message, #error-message { text-align: center; margin-top: 10px; padding: 10px;}
+        #error-message { color: red; font-weight: bold;}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Quizzer</h1>
+        <h1>Quiz de Livros Técnicos</h1>
 
-        <div class="quiz-selector-container">
-            <label for="quiz-file-selector">Escolha o Quiz:</label>
+        <div class="selector-container">
+            <label for="quiz-file-selector">1. Escolha o Quiz:</label>
             <select id="quiz-file-selector">
-                <option value="">-- Selecione um Quiz --</option>
-                <option value="sql_performance_explained.json">SQL Performance Explained</option>
+                <option value="">-- Selecione um Livro/Assunto --</option>
+                <option value="sql_performance_explained">SQL Performance Explained</option>
                 </select>
-            <button id="start-quiz-btn">Iniciar Quiz</button>
-            <p id="error-message"></p>
+        </div>
+
+        <div id="chapter-selector-container" class="selector-container">
+            <label for="chapter-selector">2. Escolha o Capítulo:</label>
+            <select id="chapter-selector">
+                </select>
         </div>
         
-        <div id="loading-message" style="display: none;">Carregando perguntas...</div>
+        <div id="start-button-container" class="start-button-container">
+             <button id="start-quiz-btn" disabled>Iniciar Quiz</button>
+        </div>
+
+        <div id="loading-message" style="display: none;">Carregando...</div>
+        <div id="error-message"></div>
 
         <div id="quiz-area">
             <div id="question-area">
@@ -54,16 +70,13 @@
                 <div id="question-text" class="question-text"></div>
                 <div id="options-container" class="options"></div>
             </div>
-
             <div id="feedback-area" class="feedback" style="display: none;">
                 <p id="feedback-text"></p>
                 <div id="explanation-text" class="explanation"></div>
             </div>
-
             <div id="navigation-area" class="navigation">
                 <button id="next-question-btn" style="display: none;">Próxima Pergunta</button>
             </div>
-
             <div id="score-area" class="score" style="display: none;">
                 Pontuação Final: <span id="final-score"></span>/<span id="total-questions-answered"></span>
             </div>
