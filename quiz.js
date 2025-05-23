@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const quizFileSelectorEl = document.getElementById('quiz-file-selector');
+    const chapterSelectorContainerEl = document.getElementById('chapter-selector-container');
+    const chapterSelectorEl = document.getElementById('chapter-selector');
+    const startButtonContainerEl = document.getElementById('start-button-container');
     const startQuizBtn = document.getElementById('start-quiz-btn');
+    
     const errorMessageEl = document.getElementById('error-message');
     const loadingMessageEl = document.getElementById('loading-message');
     const quizAreaEl = document.getElementById('quiz-area');
@@ -16,33 +20,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalScoreEl = document.getElementById('final-score');
     const totalQuestionsAnsweredEl = document.getElementById('total-questions-answered');
 
-    let allQuestions = []; 
+    let allQuestionsFromFile = []; 
     let currentSessionQuestions = []; 
     let currentQuestionIndex = 0;
     let score = 0;
 
-    startQuizBtn.addEventListener('click', () => {
+    // Event listener para o seletor de arquivo JSON
+    quizFileSelectorEl.addEventListener('change', () => {
         const selectedFile = quizFileSelectorEl.value;
-        errorMessageEl.textContent = '';
-        
-        if (!selectedFile) {
-            errorMessageEl.textContent = "Por favor, selecione um quiz no menu.";
-            return;
+        errorMessageEl.textContent = ''; // Limpa mensagens de erro
+        quizAreaEl.style.display = 'none'; // Esconde quiz anterior, se houver
+        chapterSelectorContainerEl.style.display = 'none'; // Esconde seletor de capítulo
+        startButtonContainerEl.style.display = 'none'; // Esconde botão de iniciar
+        startQuizBtn.disabled = true; // Desabilita botão de iniciar
+
+        if (selectedFile) {
+            loadQuestions(selectedFile);
+        } else {
+            // Limpa o seletor de capítulos se nenhuma opção de quiz for selecionada
+            chapterSelectorEl.innerHTML = '<option value="">-- Selecione o Capítulo --</option>';
+            errorMessageEl.textContent = "Por favor, selecione um quiz no menu acima.";
         }
-        loadQuestions(selectedFile);
     });
 
+    startQuizBtn.addEventListener('click', initiateQuizSession);
+
     async function loadQuestions(filename) {
-        quizAreaEl.style.display = 'none';
         loadingMessageEl.style.display = 'block';
         errorMessageEl.textContent = '';
 
         try {
-            // Assume que o arquivo JSON está na mesma pasta ou em um caminho relativo
-            // Para GitHub Pages, o caminho será relativo à raiz do repositório ou à pasta onde o HTML está.
             const response = await fetch(filename); 
             if (!response.ok) {
-                throw new Error(`Não foi possível carregar o arquivo '${filename}'. Status: ${response.status}`);
+                throw new Error(`Não foi possível carregar o arquivo '${filename}'. Verifique o nome e o caminho no repositório. Status: ${response.status}`);
             }
             const parsedQuestions = await response.json();
             
@@ -50,40 +60,94 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Arquivo '${filename}' está vazio ou não é uma lista de perguntas válida.`);
             }
             
-            allQuestions = parsedQuestions.filter(q => {
+            allQuestionsFromFile = parsedQuestions.filter(q => {
                 const isValid = q && typeof q.chapter !== 'undefined' && q.question && Array.isArray(q.options) && q.options.length > 0 && typeof q.correct_index === 'number' && q.explanation;
-                if (!isValid) {
-                    console.warn("Pergunta malformada ignorada:", q);
-                }
+                if (!isValid) console.warn("Pergunta malformada ignorada:", q);
                 return isValid;
             });
 
-            if (allQuestions.length === 0) {
+            if (allQuestionsFromFile.length === 0) {
                  throw new Error(`Nenhuma pergunta válida encontrada no arquivo '${filename}'.`);
             }
             
+            populateChapterSelector(allQuestionsFromFile);
+            chapterSelectorContainerEl.style.display = 'block';
+            startButtonContainerEl.style.display = 'block';
+            startQuizBtn.disabled = false; // Habilita o botão de iniciar
             loadingMessageEl.style.display = 'none';
-            quizAreaEl.style.display = 'block'; 
-            startNewQuizSession();
+            errorMessageEl.textContent = ""; // Limpa mensagem de erro se carregou bem
 
         } catch (error) {
             loadingMessageEl.style.display = 'none';
-            errorMessageEl.textContent = `Erro: ${error.message}`;
-            allQuestions = [];
+            errorMessageEl.textContent = `Erro ao carregar quiz: ${error.message}`;
+            allQuestionsFromFile = [];
+            chapterSelectorContainerEl.style.display = 'none'; // Esconde seletor de capítulo em caso de erro
+            startButtonContainerEl.style.display = 'none'; // Esconde botão de iniciar
             console.error("Erro detalhado ao carregar/processar JSON:", error);
         }
     }
 
-    function startNewQuizSession() {
-        currentSessionQuestions = [...allQuestions].sort(() => Math.random() - 0.5);
+    function populateChapterSelector(questions) {
+        chapterSelectorEl.innerHTML = ''; // Limpa opções antigas
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "all";
+        defaultOption.textContent = "Todos os Capítulos";
+        chapterSelectorEl.appendChild(defaultOption);
+
+        const chapters = [...new Set(questions.map(q => q.chapter))].sort((a, b) => {
+            const numA = Number(a);
+            const numB = Number(b);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return String(a).localeCompare(String(b)); // Ordenação alfanumérica para capítulos não numéricos
+        });
+
+        chapters.forEach(chapter => {
+            const option = document.createElement('option');
+            option.value = chapter;
+            option.textContent = `Capítulo ${chapter}`;
+            chapterSelectorEl.appendChild(option);
+        });
+    }
+
+    function initiateQuizSession() {
+        const selectedChapter = chapterSelectorEl.value;
+        
+        if (allQuestionsFromFile.length === 0) {
+            errorMessageEl.textContent = "Nenhuma pergunta carregada. Selecione um quiz primeiro.";
+            return;
+        }
+        if (!selectedChapter) {
+            errorMessageEl.textContent = "Por favor, selecione um capítulo (ou 'Todos os Capítulos').";
+            return;
+        }
+
+        if (selectedChapter === "all") {
+            currentSessionQuestions = [...allQuestionsFromFile];
+        } else {
+            currentSessionQuestions = allQuestionsFromFile.filter(q => String(q.chapter) === String(selectedChapter));
+        }
+        
+        if (currentSessionQuestions.length === 0) {
+            errorMessageEl.textContent = `Nenhuma pergunta encontrada para o capítulo '${selectedChapter}'.`;
+            quizAreaEl.style.display = 'none';
+            return;
+        }
+
+        currentSessionQuestions.sort(() => Math.random() - 0.5);
         currentQuestionIndex = 0;
         score = 0;
         
+        quizAreaEl.style.display = 'block';
         scoreAreaEl.style.display = 'none';
         nextQuestionBtn.style.display = 'none';
         feedbackAreaEl.style.display = 'none';
+        errorMessageEl.textContent = ''; // Limpa mensagens de erro
         displayQuestion();
     }
+
+    // Funções displayQuestion, handleAnswer, nextQuestion, showFinalScore permanecem as mesmas da versão anterior
+    // Vou incluí-las aqui para o script ficar completo:
 
     function displayQuestion() {
         if (currentQuestionIndex < currentSessionQuestions.length) {
@@ -155,12 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     nextQuestionBtn.addEventListener('click', nextQuestion);
 
-    // Prepara a interface inicial
+    // Estado inicial da interface
     quizAreaEl.style.display = 'none'; 
-    chapterTitleEl.textContent = "";
-    questionTextEl.textContent = ""; // Limpa qualquer texto inicial
+    chapterSelectorContainerEl.style.display = 'none';
+    startButtonContainerEl.style.display = 'none'; // O botão só aparece depois que um arquivo é carregado e os capítulos populados
     loadingMessageEl.style.display = 'none';
-    errorMessageEl.textContent = "Selecione um quiz no menu acima e clique em 'Iniciar Quiz'.";
-
-
+    errorMessageEl.textContent = "Para começar, selecione um quiz no menu acima.";
 });
