@@ -118,5 +118,848 @@
         ],
         "correct_index": 1,
         "explanation": "Um índice é menos eficaz (e o otimizador pode até optar por não usá-lo) para buscar valores de baixa seletividade, ou seja, valores que aparecem em uma grande porcentagem das linhas da tabela. Se 'ENVIADO' é muito comum, buscar por ele pode resultar na leitura de grande parte da tabela de qualquer maneira. 📉"
+    },
+{
+        "chapter": 2,
+        "question": "Qual é a 'leading edge' (borda principal ou parte inicial) de um índice multicoluna, por exemplo, em `(col_A, col_B, col_C)`?",
+        "options": [
+            "A) Apenas a coluna C, por ser a última e mais específica.",
+            "B) Qualquer combinação das colunas A, B, ou C, em qualquer ordem.",
+            "C) A coluna A sozinha, ou o par (col_A, col_B), ou o trio (col_A, col_B, col_C), indicando que as colunas devem ser usadas em ordem a partir da primeira.",
+            "D) Apenas a coluna do meio (col_B), para fins de balanceamento do índice."
+        ],
+        "correct_index": 2,
+        "explanation": "A 'leading edge' refere-se ao uso da(s) primeira(s) coluna(s) do índice, na ordem em que foram definidas. Para o índice (A,B,C), a borda principal pode ser A, (A,B) ou (A,B,C). Condições que usam essa borda são mais eficientes. 📏"
+    },
+    {
+        "chapter": 2,
+        "question": "Se você tem um índice multicoluna em `(sobrenome, primeiro_nome)`, qual das seguintes cláusulas `WHERE` NÃO poderá usar este índice de forma otimizada para um 'seek' ou 'range scan' eficiente?",
+        "options": [
+            "A) `WHERE sobrenome = 'Silva' AND primeiro_nome = 'João'`",
+            "B) `WHERE sobrenome = 'Silva'`",
+            "C) `WHERE primeiro_nome = 'João'`",
+            "D) `WHERE sobrenome LIKE 'S%'`"
+        ],
+        "correct_index": 2,
+        "explanation": "Um índice multicoluna geralmente requer que a(s) primeira(s) coluna(s) do índice (a 'leading edge') sejam usadas na cláusula WHERE para uma busca eficiente. Consultar apenas por `primeiro_nome` 'pula' a primeira coluna do índice (`sobrenome`), tornando o uso do índice menos eficiente ou impossível para um seek direto. 🔍"
+    },
+    {
+        "chapter": 2,
+        "question": "Ao definir a ordem das colunas em um índice multicoluna, qual é uma heurística comum para otimizar consultas que usam condições de igualdade (`=`) e de intervalo (`>`, `<`, `BETWEEN`)?",
+        "options": [
+            "A) Sempre colocar as colunas usadas em condições de intervalo primeiro.",
+            "B) Colocar as colunas usadas em condições de igualdade primeiro, seguidas pelas colunas usadas em condições de intervalo.",
+            "C) A ordem não importa se todas as colunas do WHERE estiverem no índice.",
+            "D) Colocar as colunas com menor seletividade primeiro."
+        ],
+        "correct_index": 1,
+        "explanation": "Para máxima eficiência, as colunas usadas com predicados de igualdade devem vir primeiro no índice. A primeira coluna com uma condição de intervalo pode usar o índice para um range scan, mas as colunas subsequentes no índice geralmente só servirão para filtragem adicional, não para restringir o range inicial. (=, =, >) ✅"
+    },
+    {
+        "chapter": 2,
+        "question": "Um 'Index-Only Scan' é possível com um índice multicoluna em `(col_A, col_B, col_C)` se a consulta for `SELECT col_A, col_B FROM tabela WHERE col_A = 10 AND col_B > 5`?",
+        "options": [
+            "A) Não, pois a coluna C do índice não está no SELECT nem no WHERE.",
+            "B) Sim, porque todas as colunas necessárias para o SELECT (`col_A`, `col_B`) e para o WHERE (`col_A`, `col_B`) estão presentes no índice.",
+            "C) Apenas se `col_A` e `col_B` juntas formarem uma chave primária.",
+            "D) Não, Index-Only Scans só funcionam com índices de coluna única."
+        ],
+        "correct_index": 1,
+        "explanation": "Um Index-Only Scan é possível se todas as colunas referenciadas em todas as partes da consulta (SELECT, WHERE, ORDER BY, GROUP BY) estiverem contidas no índice. Neste caso, `col_A` e `col_B` estão no índice. 💯"
+    },
+    {
+        "chapter": 2,
+        "question": "Se uma consulta tem `WHERE col_A > 10 AND col_B = 5` e existe um índice multicoluna em `(col_A, col_B)`, como o banco de dados provavelmente usará o índice?",
+        "options": [
+            "A) O índice não pode ser usado porque a primeira coluna (`col_A`) tem uma condição de intervalo e a segunda (`col_B`) tem uma condição de igualdade.",
+            "B) Apenas a condição `col_B = 5` será usada para um 'index seek', e `col_A > 10` será um filtro residual.",
+            "C) O índice será usado para um 'range scan' em `col_A` (para `col_A > 10`), e a condição `col_B = 5` será aplicada como um predicado de filtro nas entradas do índice encontradas.",
+            "D) O banco fará duas varreduras de índice separadas e depois juntará os resultados."
+        ],
+        "correct_index": 2,
+        "explanation": "O banco pode fazer um range scan no índice para `col_A > 10`. Para as entradas do índice que satisfazem essa condição, ele então verifica se `col_B = 5`. A coluna `col_B` não pode ser usada para um 'seek' inicial após uma condição de range em `col_A`. (>)"
+    },
+    {
+        "chapter": 2,
+        "question": "Considerando a consulta `SELECT * FROM pedidos WHERE cliente_id = ? AND status_pedido = ?`, qual índice seria geralmente mais benéfico se `cliente_id` for muito mais seletivo que `status_pedido`?",
+        "options": [
+            "A) Um índice em `(status_pedido, cliente_id)`.",
+            "B) Um índice em `(cliente_id, status_pedido)`.",
+            "C) Dois índices separados: um em `cliente_id` e outro em `status_pedido`.",
+            "D) Nenhum índice é necessário se a tabela for pequena."
+        ],
+        "correct_index": 1,
+        "explanation": "Colocar a coluna mais seletiva (`cliente_id`) primeiro no índice multicoluna permite que o banco reduza o conjunto de linhas candidatas mais rapidamente. O filtro por `status_pedido` é então aplicado a um conjunto menor. 🎯"
+    },
+    {
+        "chapter": 2,
+        "question": "Quando um índice em `(A, B)` é mais vantajoso do que ter dois índices separados, um em `A` e outro em `B`?",
+        "options": [
+            "A) Sempre, pois ocupa menos espaço.",
+            "B) Principalmente quando as consultas frequentemente filtram por `A` e `B` juntos (ex: `WHERE A = ? AND B = ?`) ou quando um Index-Only Scan pode ser satisfeito pelo índice `(A, B)`.",
+            "C) Apenas se a coluna `B` for uma chave estrangeira para `A`.",
+            "D) Ter dois índices separados é sempre preferível para flexibilidade."
+        ],
+        "correct_index": 1,
+        "explanation": "Um índice concatenado `(A, B)` é otimizado para consultas que usam a 'leading edge' (A, ou A e B). Ele também pode cobrir consultas que selecionam A e B. Dois índices separados não oferecem a mesma ordenação combinada e podem exigir que o banco combine os resultados dos dois índices, o que pode ser menos eficiente. 🤝"
+    },
+    {
+        "chapter": 2,
+        "question": "Em um índice `(regiao, cidade, bairro)`, uma consulta com `WHERE regiao = 'SUDESTE' AND bairro = 'CENTRO'` pode usar eficientemente todas as partes do índice para um 'seek' direto?",
+        "options": [
+            "A) Sim, o otimizador pode usar as colunas do índice em qualquer ordem.",
+            "B) Não, porque a coluna `cidade` foi 'pulada' na condição WHERE, quebrando a 'leading edge' do índice após `regiao`.",
+            "C) Sim, desde que `bairro` seja uma coluna altamente seletiva.",
+            "D) Apenas se `regiao`, `cidade`, e `bairro` forem todas do tipo VARCHAR."
+        ],
+        "correct_index": 1,
+        "explanation": "Para que um índice multicoluna seja usado eficientemente em todas as suas partes para um 'seek' ou 'range scan' preciso, as condições na cláusula `WHERE` devem corresponder a um prefixo contínuo das colunas do índice. Pular uma coluna intermediária (`cidade` neste caso) impede o uso otimizado das colunas subsequentes (`bairro`) para refinar o 'seek' inicial. 🚧"
+    },
+    {
+        "chapter": 2,
+        "question": "Se um índice multicoluna é `(data_pedido, cliente_id, status)` e a consulta é `SELECT ... FROM pedidos WHERE cliente_id = 123 ORDER BY data_pedido`, o índice pode ser usado para a cláusula `ORDER BY`?",
+        "options": [
+            "A) Sim, diretamente, pois `data_pedido` está no índice.",
+            "B) Não, porque `data_pedido` não é a primeira coluna do índice e a cláusula `WHERE` não a utiliza para restringir o range de forma a garantir a ordem por `data_pedido` para o `cliente_id` específico.",
+            "C) Sim, mas apenas se `cliente_id` for a chave primária.",
+            "D) Apenas se a consulta também incluir `WHERE data_pedido > 'alguma_data'`."
+        ],
+        "correct_index": 1,
+        "explanation": "Para que um índice multicoluna satisfaça um `ORDER BY`, as colunas do `ORDER BY` devem corresponder a um prefixo do índice, e as colunas anteriores a elas no índice devem ter condições de igualdade no `WHERE`. Aqui, `cliente_id` é filtrado, mas não há garantia de que os resultados para esse cliente estarão ordenados por `data_pedido` sem um sort adicional, pois `data_pedido` não é a primeira coluna usada pelo `WHERE` de forma a manter sua ordem natural para o subconjunto filtrado. ⚠️"
+    },
+    {
+        "chapter": 2,
+        "question": "Qual afirmação sobre índices multicoluna é geralmente VERDADEIRA?",
+        "options": [
+            "A) Adicionar mais colunas a um índice sempre melhora a performance de todas as consultas.",
+            "B) A ordem das colunas em um índice multicoluna não afeta como ele é utilizado pelo otimizador.",
+            "C) Um índice multicoluna pode ser usado para satisfazer uma consulta mesmo que apenas a segunda ou terceira coluna do índice seja referenciada no WHERE, desde que com igualdade.",
+            "D) A eficácia de um índice multicoluna depende crucialmente da ordem das suas colunas e de como as cláusulas WHERE e ORDER BY interagem com essa ordem."
+        ],
+        "correct_index": 3,
+        "explanation": "A ordem das colunas é fundamental. A 'leading edge' do índice deve ser utilizada pela cláusula WHERE para que o índice seja eficaz. Adicionar colunas desnecessárias pode aumentar o tamanho do índice e o custo de manutenção. Usar colunas do meio sem as primeiras não é eficiente. 🧐"
+    },
+{
+        "chapter": 3,
+        "question": "Qual das seguintes consultas com o operador `LIKE` tem maior probabilidade de utilizar um índice padrão na coluna `nome_produto` de forma eficiente?",
+        "options": [
+            "A) `WHERE nome_produto LIKE '%Caneta%'` (curinga no início e no fim)",
+            "B) `WHERE nome_produto LIKE 'Caneta%'` (curinga apenas no fim)",
+            "C) `WHERE nome_produto LIKE '%Azul'` (curinga apenas no início)",
+            "D) Todas as opções acima usarão o índice da mesma forma."
+        ],
+        "correct_index": 1,
+        "explanation": "Um `LIKE` com um curinga (`%` ou `_`) no início de um padrão (`'%Termo'` ou `'%Termo%'`) geralmente impede o uso de um índice B-Tree padrão para um 'seek' ou 'range scan' eficiente. `LIKE 'Termo%'` pode usar o índice porque o prefixo é conhecido. 🔎"
+    },
+    {
+        "chapter": 3,
+        "question": "O que é um 'Function-Based Index' (Índice Baseado em Função) ou 'Index on Expression' (Índice em Expressão)?",
+        "options": [
+            "A) Um índice que só pode ser usado dentro de Stored Procedures ou Funções do banco de dados.",
+            "B) Um índice que armazena o resultado de uma função ou expressão aplicada a uma ou mais colunas, em vez de armazenar os valores diretos das colunas.",
+            "C) Um tipo especial de índice que automaticamente aplica funções comuns (como `UPPER`, `LOWER`) a todas as colunas de texto da tabela.",
+            "D) Um índice que permite buscas `LIKE` com curinga no início de forma eficiente em qualquer SGBD."
+        ],
+        "correct_index": 1,
+        "explanation": "Um índice baseado em função pré-calcula e armazena os resultados de uma expressão (ex: `UPPER(coluna)`). Se a cláusula `WHERE` usar exatamente a mesma expressão (ex: `WHERE UPPER(coluna) = 'VALOR'`), o banco pode usar esse índice eficientemente.  функциональный индекс ✅"
+    },
+    {
+        "chapter": 3,
+        "question": "Considere a consulta `SELECT * FROM usuarios WHERE UPPER(email) = 'USUARIO@EMAIL.COM'`. Qual é a melhor abordagem para otimizar esta consulta se ela for frequente?",
+        "options": [
+            "A) Criar um índice padrão na coluna `email` e esperar que o SGBD o utilize.",
+            "B) Evitar o uso da função `UPPER` e garantir que os dados no `WHERE` correspondam ao case da coluna `email`.",
+            "C) Criar um índice baseado na função `UPPER(email)`.",
+            "D) Usar `email LIKE 'usuario@email.com'` com a opção `COLLATE` para ignorar case."
+        ],
+        "correct_index": 2,
+        "explanation": "Para que uma função aplicada a uma coluna na cláusula `WHERE` possa usar um índice diretamente, o índice deve ser criado sobre essa mesma expressão funcional. Um índice em `UPPER(email)` atenderia perfeitamente à condição. 🛠️"
+    },
+    {
+        "chapter": 3,
+        "question": "Por que a consulta `WHERE nome_coluna LIKE '%meio%'` é geralmente ineficiente, mesmo que `nome_coluna` esteja indexada?",
+        "options": [
+            "A) Porque o curinga `%` não é um caractere SQL padrão.",
+            "B) Porque o banco de dados não consegue usar a estrutura ordenada de um índice B-Tree para localizar diretamente um padrão que pode começar em qualquer lugar da string.",
+            "C) Porque `LIKE` sempre resulta em um Full Table Scan, independentemente dos curingas.",
+            "D) Porque esse tipo de `LIKE` só funciona bem com Full-Text Search Indexes."
+        ],
+        "correct_index": 1,
+        "explanation": "Índices B-Tree são como dicionários ordenados. Se você não sabe a primeira letra (ou primeiras letras) da palavra que procura (que é o caso de `'%meio%'`), o dicionário ordenado não ajuda muito a encontrá-la rapidamente. 📖"
+    },
+    {
+        "chapter": 3,
+        "question": "Qual a principal desvantagem de usar índices baseados em função?",
+        "options": [
+            "A) Eles são sempre muito maiores que índices normais.",
+            "B) Eles só podem ser usados em colunas do tipo numérico.",
+            "C) A consulta deve usar *exatamente* a mesma função/expressão que foi usada na definição do índice para que ele seja utilizado.",
+            "D) Eles impedem qualquer operação de `INSERT` ou `UPDATE` na tabela."
+        ],
+        "correct_index": 2,
+        "explanation": "Para que um índice baseado em função seja aproveitado, a expressão na cláusula `WHERE` da consulta deve corresponder precisamente à expressão usada para criar o índice. Pequenas variações podem fazer com que o otimizador não o utilize. 🎯"
+    },
+    {
+        "chapter": 3,
+        "question": "Para buscas case-insensitive (sem diferenciar maiúsculas de minúsculas) em uma coluna de texto, qual das seguintes NÃO é uma técnica comum de otimização mencionada ou implícita no contexto do livro?",
+        "options": [
+            "A) Usar a função `LOWER()` ou `UPPER()` em ambos os lados da comparação e ter um índice na função aplicada à coluna (ex: `INDEX ON (LOWER(coluna))`).",
+            "B) Usar um `COLLATE` específico no nível da coluna ou da consulta que seja case-insensitive (se o SGBD suportar e o índice for compatível).",
+            "C) Armazenar uma versão normalizada da coluna (ex: toda em minúsculas) em uma coluna separada e indexar essa nova coluna.",
+            "D) Aplicar a função `LOWER()` ou `UPPER()` apenas no valor fornecido pelo usuário no `WHERE`, deixando a coluna do banco intacta, para usar o índice padrão."
+        ],
+        "correct_index": 3,
+        "explanation": "Aplicar a função apenas no valor do usuário (`WHERE coluna = LOWER('VALOR')`) não torna a busca na coluna do banco SARGable para um índice padrão. A função precisa estar na coluna do banco no `WHERE` para usar um índice funcional, ou o `COLLATE` deve cuidar disso, ou uma coluna normalizada deve ser usada. Aa ≠ aA"
+    },
+    {
+        "chapter": 3,
+        "question": "Qual das alternativas descreve melhor o comportamento do otimizador de consultas quando encontra uma função aplicada a uma coluna em um predicado `WHERE` (ex: `WHERE ANO(data_nascimento) = 2000`) e não há um índice baseado nessa função?",
+        "options": [
+            "A) O otimizador tentará reescrever a consulta para remover a função automaticamente.",
+            "B) O otimizador calculará a função para cada linha da tabela e então comparará o resultado, resultando frequentemente em um Full Table Scan ou Index Full Scan.",
+            "C) O otimizador retornará um erro, pois funções em predicados são proibidas.",
+            "D) O otimizador usará um índice padrão na coluna `data_nascimento` e aplicará a função `ANO()` apenas aos valores lidos do índice."
+        ],
+        "correct_index": 1,
+        "explanation": "Sem um índice na expressão `ANO(data_nascimento)`, o banco de dados geralmente precisa aplicar a função `ANO()` a cada valor da coluna `data_nascimento` na tabela (ou em todas as entradas de um índice, se fizer um Index Full Scan) antes de poder comparar com `2000`. Isso impede um 'seek' direto. 🐢"
+    },
+    {
+        "chapter": 3,
+        "question": "Se você precisa frequentemente buscar por `SUBSTRING(codigo_produto, 1, 3) = 'ABC'`, qual seria a forma mais eficiente de indexar para essa consulta?",
+        "options": [
+            "A) Um índice na coluna `codigo_produto` inteira.",
+            "B) Um índice baseado na função `SUBSTRING(codigo_produto, 1, 3)`.",
+            "C) Não indexar e confiar no cache do banco.",
+            "D) Um índice em outra coluna não relacionada."
+        ],
+        "correct_index": 1,
+        "explanation": "Criar um índice sobre a expressão exata usada na consulta (`SUBSTRING(codigo_produto, 1, 3)`) permite que o banco utilize esse índice diretamente para encontrar as linhas correspondentes. ✂️"
+    },
+    {
+        "chapter": 3,
+        "question": "O uso de `OR` em uma cláusula `WHERE` combinando condições em colunas diferentes (ex: `WHERE status = 'A' OR prioridade = 1`) pode, às vezes, dificultar a otimização com índices padrões. Qual é uma alternativa que o livro pode sugerir para reescrever tal consulta, se aplicável e se as condições forem independentes?",
+        "options": [
+            "A) Sempre usar `AND` em vez de `OR`.",
+            "B) Usar `UNION ALL` para combinar os resultados de duas consultas separadas, cada uma otimizada para uma das condições do `OR` (assumindo que cada condição pode usar um índice diferente).",
+            "C) Remover a cláusula `WHERE` e filtrar na aplicação.",
+            "D) Criar um índice multicoluna em `(status, prioridade)`."
+        ],
+        "correct_index": 1,
+        "explanation": "Para `OR` em colunas diferentes, onde cada condição pode usar um índice diferente, reescrever com `UNION ALL` (e depois talvez `DISTINCT` se necessário) pode permitir que cada parte da união use seu próprio índice otimizado. Um índice em `(status, prioridade)` não ajudaria muito um `OR` simples. ∪"
+    },
+    {
+        "chapter": 3,
+        "question": "Qual é o impacto principal de um predicado `WHERE data_coluna + INTERVAL '1 day' > CURRENT_DATE` em relação ao uso de um índice na `data_coluna`?",
+        "options": [
+            "A) Nenhum impacto, o índice será usado normalmente.",
+            "B) O índice não pode ser usado porque há uma operação aritmética (`+ INTERVAL '1 day'`) na coluna indexada.",
+            "C) O índice será usado, mas de forma menos eficiente.",
+            "D) O banco de dados criará um índice temporário na expressão."
+        ],
+        "correct_index": 1,
+        "explanation": "Aplicar aritmética ou funções a uma coluna no predicado `WHERE` geralmente torna o predicado non-SARGable para um índice padrão nessa coluna. Seria melhor reescrever como `data_coluna > CURRENT_DATE - INTERVAL '1 day'` para manter a coluna isolada. 🗓️"
+    },
+{
+        "chapter": 4,
+        "question": "Qual dos seguintes algoritmos de JOIN é geralmente o mais eficiente quando uma tabela (a 'externa') é pequena e a outra (a 'interna') é grande e possui um índice na(s) coluna(s) de junção?",
+        "options": [
+            "A) Hash Join",
+            "B) Sort Merge Join",
+            "C) Nested Loops Join",
+            "D) Cartesian Product (Cross Join)"
+        ],
+        "correct_index": 2,
+        "explanation": "O Nested Loops Join itera sobre as linhas da tabela externa (menor) e, para cada uma, usa o índice da tabela interna (maior) para encontrar as linhas correspondentes rapidamente. ➰"
+    },
+    {
+        "chapter": 4,
+        "question": "Em um `SELECT t1.*, t2.* FROM tabela1 t1 JOIN tabela2 t2 ON t1.id_fk = t2.id_pk`, qual coluna é a candidata mais importante para ter um índice visando otimizar um Nested Loops Join?",
+        "options": [
+            "A) `t1.id_fk` (a coluna da chave estrangeira na tabela 'externa' da junção)",
+            "B) `t2.id_pk` (a coluna da chave primária na tabela 'interna' da junção, que já é indexada)",
+            "C) Uma coluna não relacionada ao JOIN em `tabela1`.",
+            "D) Uma coluna não relacionada ao JOIN em `tabela2`."
+        ],
+        "correct_index": 0,
+        "explanation": "Para o Nested Loops Join, é crucial que a coluna da tabela 'interna' na condição de junção seja indexada. Se `tabela1` for a tabela externa e `tabela2` a interna, um índice em `t2.id_pk` (que já existe) é usado. Se `tabela2` for a externa e `tabela1` a interna, um índice em `t1.id_fk` seria essencial. No contexto da pergunta, o acesso eficiente à tabela 'interna' (a segunda na ordem do loop) é chave; se `t1` é a externa, o índice em `t2.id_pk` (PK) é usado. Se a ordem for invertida pelo otimizador, um índice em `t1.id_fk` seria vital. A pergunta sugere `t1 JOIN t2`, então `t2.id_pk` é chave para o acesso à `t2` (interna) para cada linha de `t1` (externa)."
+    },
+    {
+        "chapter": 4,
+        "question": "Quando um 'Hash Join' é frequentemente escolhido pelo otimizador do banco de dados?",
+        "options": [
+            "A) Apenas quando ambas as tabelas envolvidas no JOIN são muito pequenas.",
+            "B) Para junções de igualdade (`=`), especialmente quando os conjuntos de dados são grandes e não há índices adequados para um Nested Loops Join, ou quando o otimizador estima que será mais rápido.",
+            "C) Para junções que envolvem condições de intervalo (`>`, `<`), pois o hash é bom para ranges.",
+            "D) Somente se as colunas de junção forem do tipo numérico inteiro."
+        ],
+        "correct_index": 1,
+        "explanation": "O Hash Join constrói uma tabela hash de uma das tabelas (geralmente a menor) na memória e depois varre a outra tabela, procurando correspondências na tabela hash. É eficiente para junções de igualdade em grandes volumes de dados e quando os índices não favorecem outros métodos. 🏗️"
+    },
+    {
+        "chapter": 4,
+        "question": "Qual é a principal característica de um 'Sort Merge Join'?",
+        "options": [
+            "A) Ele sempre requer que uma das tabelas caiba inteiramente na memória.",
+            "B) Ele primeiro ordena ambas as tabelas (ou os subconjuntos relevantes) pelas colunas de junção e depois mescla (merge) as linhas ordenadas.",
+            "C) Ele não precisa de condições de igualdade e funciona melhor com `LIKE`.",
+            "D) Ele só funciona se as colunas de junção já forem chaves primárias ordenadas."
+        ],
+        "correct_index": 1,
+        "explanation": "O Sort Merge Join, como o nome sugere, envolve duas etapas principais: ordenar as tabelas pela(s) coluna(s) de junção (se já não estiverem ordenadas por um índice) e depois fazer uma passagem linear pelas tabelas ordenadas para encontrar as correspondências. 📜+📜=🤝"
+    },
+    {
+        "chapter": 4,
+        "question": "O que acontece se você fizer um JOIN entre duas tabelas sem uma cláusula `ON` (ou com uma condição `ON` que é sempre verdadeira, como `1=1`)?",
+        "options": [
+            "A) O banco de dados retorna um erro de sintaxe.",
+            "B) O banco de dados otimiza e assume uma junção pela chave primária e estrangeira mais óbvia.",
+            "C) Ocorre um 'Produto Cartesiano' (Cross Join), onde cada linha da primeira tabela é combinada com cada linha da segunda tabela, geralmente resultando em um conjunto de resultados muito grande e raramente desejado.",
+            "D) O banco de dados realiza um `INNER JOIN` usando a primeira coluna de cada tabela."
+        ],
+        "correct_index": 2,
+        "explanation": "A ausência de uma condição de junção significativa (ou uma condição sempre verdadeira) resulta em um Produto Cartesiano, que combina todas as linhas de uma tabela com todas as linhas da outra. Cuidado! 🤯"
+    },
+    {
+        "chapter": 4,
+        "question": "Em um `LEFT OUTER JOIN` de `TabelaA LEFT JOIN TabelaB ON TabelaA.id = TabelaB.fk_a`, o que acontece com as linhas da `TabelaA` que não têm correspondência na `TabelaB`?",
+        "options": [
+            "A) Elas são completamente omitidas do resultado.",
+            "B) Elas são incluídas no resultado, e as colunas correspondentes da `TabelaB` são preenchidas com valores `NULL`.",
+            "C) A consulta resulta em um erro, pois todas as linhas da `TabelaA` devem ter correspondência.",
+            "D) Elas são incluídas, e as colunas da `TabelaB` são preenchidas com valores padrão da `TabelaB`."
+        ],
+        "correct_index": 1,
+        "explanation": "A característica do `LEFT OUTER JOIN` é que todas as linhas da tabela da esquerda (`TabelaA`) são incluídas no resultado. Se não houver correspondência na tabela da direita (`TabelaB`), as colunas de `TabelaB` são preenchidas com `NULL` para essas linhas. ⬅️✔️"
+    },
+    {
+        "chapter": 4,
+        "question": "Qual a principal recomendação do livro para a ordem das tabelas em um `JOIN` manual (se o SGBD não reordenar)?",
+        "options": [
+            "A) Sempre listar a maior tabela primeiro.",
+            "B) A ordem nunca importa, o otimizador sempre corrige.",
+            "C) Para Nested Loops, listar a tabela que resulta no menor número de iterações no loop externo primeiro (geralmente a tabela menor ou a que retorna menos linhas após filtros).",
+            "D) Listar as tabelas em ordem alfabética para clareza."
+        ],
+        "correct_index": 2,
+        "explanation": "Embora muitos otimizadores tentem reordenar os joins, se você puder influenciar (ou estiver em um SGBD mais simples), para Nested Loops, ter a tabela menor (ou a que produz menos linhas após os filtros iniciais) como a tabela 'externa' do loop é geralmente mais eficiente. 📏"
+    },
+    {
+        "chapter": 4,
+        "question": "Usar `SELECT *` em uma consulta com múltiplos `JOIN`s pode ser problemático para a performance por quê?",
+        "options": [
+            "A) Porque `*` é uma palavra reservada que diminui a velocidade do parser SQL.",
+            "B) Porque pode impedir 'Index-Only Scans' e aumentar o tráfego de dados, especialmente se muitas colunas não são realmente necessárias.",
+            "C) Porque `SELECT *` não é compatível com a sintaxe `JOIN`.",
+            "D) Porque sempre força o uso de um 'Cartesian Product'."
+        ],
+        "correct_index": 1,
+        "explanation": "`SELECT *` busca todas as colunas de todas as tabelas envolvidas. Se algumas dessas colunas não são necessárias e poderiam ser obtidas de um índice (ou evitadas), o `SELECT *` força o acesso à tabela e aumenta a quantidade de dados transferidos. 🌟➡️📦"
+    },
+    {
+        "chapter": 4,
+        "question": "O que é um 'Join Predicate Pushdown'?",
+        "options": [
+            "A) Uma técnica para adiar a avaliação dos predicados de junção para o final da consulta.",
+            "B) Uma otimização onde o banco de dados tenta aplicar filtros (predicados `WHERE`) o mais cedo possível, idealmente antes ou durante a operação de junção, para reduzir o número de linhas a serem juntadas.",
+            "C) Um tipo de JOIN que só funciona com predicados numéricos.",
+            "D) Empurrar manualmente as tabelas na ordem correta na cláusula FROM."
+        ],
+        "correct_index": 1,
+        "explanation": "Predicate Pushdown é uma otimização importante onde o SGBD aplica filtros o mais cedo possível no plano de execução, muitas vezes 'empurrando-os' para dentro das operações de acesso às tabelas individuais antes mesmo que o join aconteça, reduzindo o volume de dados a ser processado pelo join. 🔽"
+    },
+    {
+        "chapter": 4,
+        "question": "Um `ANTI JOIN` (geralmente implementado com `NOT EXISTS` ou `NOT IN` ou `LEFT JOIN ... WHERE key IS NULL`) é usado para quê?",
+        "options": [
+            "A) Encontrar todas as combinações possíveis entre duas tabelas.",
+            "B) Encontrar linhas em uma tabela que NÃO têm correspondência em outra tabela.",
+            "C) Juntar uma tabela com ela mesma (Self Join).",
+            "D) Somar valores de colunas correspondentes em duas tabelas."
+        ],
+        "correct_index": 1,
+        "explanation": "Um Anti Join é usado para selecionar linhas da primeira tabela para as quais não existem linhas correspondentes na segunda tabela, com base na condição de junção. 🚫🤝"
+    },
+    {
+        "chapter": 5,
+        "question": "Qual é o objetivo principal do 'clustering' (agrupamento) de dados em um banco de dados relacional?",
+        "options": [
+            "A) Aumentar o número de conexões simultâneas que o banco pode suportar.",
+            "B) Reduzir o espaço total em disco ocupado pela base de dados.",
+            "C) Armazenar fisicamente no disco as linhas que são frequentemente acessadas juntas o mais próximo possível umas das outras, para minimizar o I/O.",
+            "D) Garantir que todos os índices caibam inteiramente na memória RAM."
+        ],
+        "correct_index": 2,
+        "explanation": "O clustering visa melhorar a performance de I/O armazenando linhas relacionadas (ou linhas na mesma ordem de um índice frequentemente usado) próximas no disco. Isso reduz o movimento da cabeça do disco (para HDDs) e o número de blocos diferentes a serem lidos. 옹기종기"
+    },
+    {
+        "chapter": 5,
+        "question": "O que o 'fator de clusterização' (index clustering factor) de um índice tipicamente indica?",
+        "options": [
+            "A) O número de colunas no índice.",
+            "B) Quão bem a ordem das chaves no índice corresponde à ordem física das linhas na tabela principal (heap table). Um valor baixo é melhor.",
+            "C) A porcentagem de dados da tabela que está coberta pelo índice.",
+            "D) A rapidez com que o índice pode ser reconstruído."
+        ],
+        "correct_index": 1,
+        "explanation": "Um fator de clusterização baixo significa que as entradas sequenciais do índice tendem a apontar para linhas na tabela que estão no mesmo bloco de dados ou em blocos adjacentes. Um fator alto significa que o acesso à tabela via índice será mais aleatório e custoso. 📉👍"
+    },
+    {
+        "chapter": 5,
+        "question": "O que é um 'Index-Only Scan'?",
+        "options": [
+            "A) Uma varredura que lê apenas o primeiro nível de um índice B-Tree.",
+            "B) Uma operação onde o banco de dados pode satisfazer completamente uma consulta (incluindo todas as colunas do SELECT, WHERE, ORDER BY, etc.) usando apenas os dados contidos em um índice, sem precisar acessar a tabela principal.",
+            "C) Um tipo de scan que só funciona em tabelas organizadas por índice (IOTs).",
+            "D) Uma varredura de índice que ignora os predicados da cláusula WHERE."
+        ],
+        "correct_index": 1,
+        "explanation": "Se todas as informações que a consulta precisa estão disponíveis no próprio índice (um 'covering index'), o banco pode evitar o acesso custoso à tabela principal, resultando em um Index-Only Scan. ✨"
+    },
+    {
+        "chapter": 5,
+        "question": "Qual é uma das principais vantagens de uma 'Index-Organized Table' (IOT no Oracle) ou uma tabela com 'Clustered Index' (SQL Server, InnoDB no MySQL)?",
+        "options": [
+            "A) Elas sempre usam menos espaço em disco do que tabelas heap com índices separados.",
+            "B) As operações de INSERT são sempre mais rápidas nelas.",
+            "C) O acesso aos dados pela chave primária (que define a organização da tabela) é muito rápido, pois os dados da linha residem diretamente na estrutura do índice.",
+            "D) Elas permitem um número ilimitado de índices secundários sem perda de performance."
+        ],
+        "correct_index": 2,
+        "explanation": "Em IOTs/tabelas com índice clusterizado, a tabela é o índice primário. Portanto, o acesso via chave primária é direto e não requer um 'lookup' adicional para a tabela, pois os dados já estão lá. 🏠"
+    },
+    {
+        "chapter": 5,
+        "question": "Qual é uma desvantagem significativa dos índices secundários em Index-Organized Tables (IOTs) ou tabelas com Clustered Index?",
+        "options": [
+            "A) Índices secundários não são permitidos nesse tipo de tabela.",
+            "B) Eles tendem a ser muito pequenos, o que os torna ineficientes.",
+            "C) Eles geralmente armazenam a(s) chave(s) do índice clusterizado como ponteiro para a linha, o que pode levar a buscas duplas em índice (uma no secundário, outra no clusterizado) e torná-los maiores se a chave clusterizada for grande.",
+            "D) Eles só podem indexar colunas numéricas."
+        ],
+        "correct_index": 2,
+        "explanation": "Como não há um ROWID estável para a heap table (pois ela não existe separadamente), os índices secundários precisam apontar para a linha usando a chave do índice primário/clusterizado. Isso pode levar a uma busca adicional e aumentar o tamanho dos índices secundários. 😟"
+    },
+    {
+        "chapter": 5,
+        "question": "Para que tipo de consulta um 'Index-Only Scan' é particularmente benéfico?",
+        "options": [
+            "A) Consultas que atualizam muitas colunas da tabela.",
+            "B) Consultas que selecionam poucas colunas, e essas colunas (junto com as do WHERE e ORDER BY) estão todas presentes em um mesmo índice.",
+            "C) Consultas que sempre fazem `SELECT *`.",
+            "D) Consultas que não possuem cláusula WHERE."
+        ],
+        "correct_index": 1,
+        "explanation": "Se você precisa de poucas colunas e consegue colocar todas elas em um índice (incluindo as do WHERE, etc.), o banco pode evitar o acesso à tabela, economizando I/O. `SELECT *` geralmente impede Index-Only Scans. 🎯"
+    },
+    {
+        "chapter": 5,
+        "question": "O comando `CLUSTER` no PostgreSQL tem qual efeito principal?",
+        "options": [
+            "A) Cria um índice clusterizado que é mantido automaticamente pelo PostgreSQL, similar ao SQL Server.",
+            "B) Reordena fisicamente a tabela no disco de acordo com a ordem de um índice especificado, mas essa ordem não é mantida automaticamente para inserções e atualizações futuras (é uma operação única).",
+            "C) Conecta múltiplos servidores PostgreSQL em um cluster para alta disponibilidade.",
+            "D) Comprime os dados da tabela para economizar espaço."
+        ],
+        "correct_index": 1,
+        "explanation": "O comando `CLUSTER` no PostgreSQL reescreve a tabela baseada na ordem de um índice. É uma operação one-time; a ordem não é mantida automaticamente depois disso. 🔄"
+    },
+    {
+        "chapter": 5,
+        "question": "No MySQL com InnoDB, como as tabelas são armazenadas por padrão?",
+        "options": [
+            "A) Como heap tables, com um índice primário não clusterizado opcional.",
+            "B) Sempre como Index-Organized Tables (IOTs) baseadas na chave primária (índice clusterizado). Se nenhuma PK é definida, o InnoDB escolhe uma ou cria uma oculta.",
+            "C) Em arquivos CSV simples para facilitar a importação/exportação.",
+            "D) O DBA escolhe entre heap table e IOT no momento da criação de cada tabela."
+        ],
+        "correct_index": 1,
+        "explanation": "O InnoDB no MySQL organiza todas as tabelas como índices clusterizados, usando a chave primária. Se não houver PK, ele procura o primeiro índice UNIQUE NOT NULL ou cria uma chave oculta.  InnoDB ❤️ Clustered Index."
+    },
+    {
+        "chapter": 5,
+        "question": "Qual é a principal motivação para se preocupar com o 'clustering' de dados ou usar 'Index-Only Scans'?",
+        "options": [
+            "A) Reduzir o uso de CPU do servidor de banco de dados.",
+            "B) Minimizar o número de operações de I/O de disco, que são geralmente as operações mais lentas em um sistema de banco de dados.",
+            "C) Simplificar a sintaxe das consultas SQL.",
+            "D) Aumentar a segurança dos dados armazenados."
+        ],
+        "correct_index": 1,
+        "explanation": "Tanto o agrupamento de dados quanto os Index-Only Scans visam reduzir a quantidade de leituras de disco necessárias para satisfazer uma consulta, pois o I/O de disco é um dos maiores gargalos de performance. 🚀"
+    },
+    {
+        "chapter": 5,
+        "question": "Se um índice secundário em uma tabela com índice clusterizado (ex: InnoDB) contém as colunas da chave clusterizada, para qual tipo de consulta esse índice secundário poderia se tornar 'covering' (permitir um index-only scan) mesmo sem incluir todas as colunas do SELECT?",
+        "options": [
+            "A) Nunca, um índice secundário não pode ser 'covering' em tabelas clusterizadas.",
+            "B) Se a consulta selecionar apenas colunas que fazem parte do próprio índice secundário OU colunas que fazem parte da chave clusterizada (que também estão no índice secundário).",
+            "C) Apenas se o índice secundário for também a chave primária.",
+            "D) Apenas para consultas que usam funções de agregação."
+        ],
+        "correct_index": 1,
+        "explanation": "Como os índices secundários em tabelas clusterizadas (como no InnoDB) incluem as colunas da chave primária (clusterizada), se sua consulta precisa apenas de colunas do índice secundário e/ou colunas da PK, o banco pode satisfazer a consulta lendo apenas o índice secundário. 👍"
+    },
+{
+        "chapter": 6,
+        "question": "Qual é o 'terceiro poder da indexação' (third power of indexing) mencionado no livro em relação à cláusula `ORDER BY`?",
+        "options": [
+            "A) A capacidade de um índice ordenar dados em memória mais rapidamente do que no disco.",
+            "B) A capacidade de um índice ser lido em ambas as direções (ascendente e descendente) para satisfazer diferentes ordens.",
+            "C) A capacidade de um índice fornecer dados já ordenados, permitindo que a operação `ORDER BY` seja 'pipelined' (em pipeline), ou seja, o banco pode começar a retornar as primeiras linhas ordenadas sem processar todo o conjunto de dados.",
+            "D) A capacidade de um índice forçar uma ordenação específica, mesmo que o usuário peça outra."
+        ],
+        "correct_index": 2,
+        "explanation": "Se um índice pode satisfazer a cláusula `ORDER BY`, o banco de dados não precisa realizar uma operação de sort separada e custosa. Ele pode ler os dados já ordenados do índice e começar a enviar as primeiras linhas imediatamente (execução em pipeline). 🚚"
+    },
+    {
+        "chapter": 6,
+        "question": "Para que uma consulta com `ORDER BY col_a, col_b` evite uma operação de `SORT` explícita, qual das seguintes condições de índice é a mais ideal?",
+        "options": [
+            "A) Um índice em `(col_b, col_a)`.",
+            "B) Um índice em `(col_a)` e outro índice separado em `(col_b)`.",
+            "C) Um índice multicoluna em `(col_a, col_b)`.",
+            "D) Um índice em qualquer coluna da tabela, desde que seja B-Tree."
+        ],
+        "correct_index": 2,
+        "explanation": "Para que o `ORDER BY` seja satisfeito diretamente pelo índice, o índice deve conter as colunas da cláusula `ORDER BY` na mesma ordem (ou em uma ordem que o banco possa usar, como a inversa) e as condições da cláusula `WHERE` devem permitir o uso dessa ordem. 🎼"
+    },
+    {
+        "chapter": 6,
+        "question": "Se você tem um índice em `(data_evento ASC, prioridade ASC)` e sua consulta é `SELECT * FROM eventos WHERE data_evento = '2024-05-23' ORDER BY prioridade ASC`, o banco de dados provavelmente evitará um sort explícito para `prioridade`?",
+        "options": [
+            "A) Não, porque `prioridade` não é a primeira coluna do índice.",
+            "B) Sim, porque a condição de igualdade em `data_evento` fixa a primeira parte do índice, e as entradas para essa data já estarão ordenadas por `prioridade` dentro do índice.",
+            "C) Apenas se `prioridade` for um número inteiro.",
+            "D) Não, porque `ORDER BY` com múltiplas colunas sempre requer sort."
+        ],
+        "correct_index": 1,
+        "explanation": "Quando a(s) primeira(s) coluna(s) de um índice multicoluna são fixadas por condições de igualdade no `WHERE`, as colunas subsequentes do índice podem ser usadas para satisfazer o `ORDER BY` para o subconjunto resultante. ✅"
+    },
+    {
+        "chapter": 6,
+        "question": "Um banco de dados pode usar um índice definido como `(col_x ASC, col_y ASC)` para satisfazer uma consulta com `ORDER BY col_x DESC, col_y DESC` sem um sort explícito?",
+        "options": [
+            "A) Não, as direções `ASC`/`DESC` devem corresponder exatamente.",
+            "B) Sim, muitos SGBDs podem ler um índice B-Tree em ambas as direções (para frente e para trás).",
+            "C) Apenas se `col_x` e `col_y` forem numéricas.",
+            "D) Apenas se o índice for do tipo Hash."
+        ],
+        "correct_index": 1,
+        "explanation": "A maioria dos SGBDs modernos pode realizar um 'Index Backward Scan' (varredura de índice para trás), permitindo que um índice `ASC` seja usado para uma ordenação `DESC` (e vice-versa), desde que todas as colunas na ordenação tenham a direção invertida de forma consistente. ⏪"
+    },
+    {
+        "chapter": 6,
+        "question": "Se uma consulta requer `ORDER BY col_A ASC, col_B DESC` (ordens mistas), o que é necessário para que um índice evite o sort?",
+        "options": [
+            "A) Um índice em `(col_A ASC, col_B ASC)` é suficiente, o banco ajusta.",
+            "B) Um índice em `(col_B DESC, col_A ASC)` é a melhor opção.",
+            "C) O índice deve ser definido com as mesmas direções de ordenação especificadas no `ORDER BY`, ou seja, `CREATE INDEX ... ON tabela (col_A ASC, col_B DESC)`.",
+            "D) É impossível evitar o sort com ordens mistas."
+        ],
+        "correct_index": 2,
+        "explanation": "Para ordens mistas no `ORDER BY`, o banco não pode simplesmente ler um índice padrão (todo `ASC` ou todo `DESC`) para frente ou para trás. O índice precisa ser criado explicitamente com essas ordens mistas para ser usado diretamente. 🔄"
+    },
+    {
+        "chapter": 6,
+        "question": "Qual dos dois principais algoritmos de `GROUP BY` pode se beneficiar diretamente de um índice para evitar uma ordenação prévia dos dados?",
+        "options": [
+            "A) O algoritmo 'Hash Aggregate'.",
+            "B) O algoritmo 'Sort Aggregate' (ou 'Stream Aggregate').",
+            "C) Ambos os algoritmos se beneficiam igualmente de qualquer índice.",
+            "D) Nenhum algoritmo de `GROUP BY` usa índices, eles sempre ordenam ou usam hash em todos os dados."
+        ],
+        "correct_index": 1,
+        "explanation": "O algoritmo 'Sort Aggregate' primeiro ordena os dados pelas colunas do `GROUP BY` e depois agrupa. Se um índice já fornece os dados nessa ordem (devido a uma cláusula `WHERE` adequada), a etapa de sort pode ser pulada (o plano pode mostrar 'NOSORT' ou simplesmente não ter um passo de sort antes da agregação). 分類➡️➕"
+    },
+    {
+        "chapter": 6,
+        "question": "Para que um `GROUP BY col_categoria` seja otimizado por um índice em `(col_categoria)`, qual condição na cláusula `WHERE` seria mais favorável?",
+        "options": [
+            "A) Nenhuma condição `WHERE`.",
+            "B) `WHERE col_outra_coisa = 'valor'`, onde `col_outra_coisa` não está no índice.",
+            "C) `WHERE col_categoria LIKE '%abc%'`.",
+            "D) `WHERE col_categoria BETWEEN 'A' AND 'C'`."
+        ],
+        "correct_index": 3,
+        "explanation": "Se a cláusula `WHERE` permite uma varredura de intervalo (range scan) no índice `(col_categoria)` de forma que os dados já saiam agrupados ou ordenados por `col_categoria`, o `GROUP BY` pode ser mais eficiente. Uma condição de igualdade ou um range pequeno na coluna do `GROUP BY` é ideal. 👍"
+    },
+    {
+        "chapter": 6,
+        "question": "O que significa um `GROUP BY` 'pipelined' (em pipeline)?",
+        "options": [
+            "A) Que o `GROUP BY` é executado em paralelo usando múltiplos pipelines de CPU.",
+            "B) Que o banco de dados pode começar a processar e agregar os grupos à medida que lê os dados (geralmente de um índice ordenado), sem precisar armazenar e ordenar todo o conjunto de dados primeiro.",
+            "C) Que os resultados do `GROUP BY` são enviados para outra consulta através de um pipeline.",
+            "D) Um `GROUP BY` que usa apenas funções de agregação que suportam pipeline."
+        ],
+        "correct_index": 1,
+        "explanation": "Um `GROUP BY` em pipeline, assim como um `ORDER BY` em pipeline, significa que o banco não precisa de uma etapa intermediária massiva de ordenação ou hashing de todo o conjunto de dados antes de começar a produzir os grupos agregados. Isso é possível se um índice fornecer os dados na ordem de agrupamento. 💧➡️➡️➡️"
+    },
+    {
+        "chapter": 6,
+        "question": "Se um índice é `(A ASC, B DESC)`, qual `ORDER BY` NÃO pode usar este índice diretamente para evitar um sort (sem ler o índice ao contrário)?",
+        "options": [
+            "A) `ORDER BY A ASC, B DESC`",
+            "B) `ORDER BY A ASC` (se o `WHERE` fixar A ou permitir um range scan em A)",
+            "C) `ORDER BY A DESC, B ASC`",
+            "D) `ORDER BY A ASC, B ASC`"
+        ],
+        "correct_index": 3,
+        "explanation": "O índice `(A ASC, B DESC)` fornece uma ordem específica. `ORDER BY A ASC, B ASC` tem uma direção diferente para B, exigindo um novo sort. A opção C exigiria ler o índice ao contrário. Opção A e B (parcialmente) podem usar o índice. 🚧"
+    },
+    {
+        "chapter": 6,
+        "question": "Além de `ORDER BY` e `GROUP BY`, qual outra operação SQL pode se beneficiar de um índice para evitar uma ordenação explícita dos dados?",
+        "options": [
+            "A) `UNION ALL`",
+            "B) `SELECT COUNT(*)` sem `WHERE`.",
+            "C) `DISTINCT` (ou `SELECT DISTINCT ...`)",
+            "D) Subconsultas correlacionadas."
+        ],
+        "correct_index": 2,
+        "explanation": "A operação `DISTINCT` precisa identificar valores únicos, o que é frequentemente feito ordenando os dados e depois removendo duplicatas adjacentes. Se um índice fornecer os dados já ordenados, essa etapa de sort pode ser evitada. ✨"
+    },
+    {
+        "chapter": 7,
+        "question": "Qual é o principal problema de performance da paginação usando `OFFSET` para buscar páginas distantes do início (ex: `LIMIT 10 OFFSET 50000`)?",
+        "options": [
+            "A) `OFFSET` sempre força o banco a usar um índice menos eficiente.",
+            "B) O banco de dados precisa identificar, ordenar e depois *descartar* todas as N linhas do offset antes de poder retornar as M linhas da página desejada, o que é custoso para N grande.",
+            "C) `OFFSET` não é uma cláusula SQL padrão e tem implementações inconsistentes.",
+            "D) `OFFSET` consome uma quantidade excessiva de espaço em disco temporário, independentemente do número de linhas."
+        ],
+        "correct_index": 1,
+        "explanation": "O `OFFSET` grande faz com que o banco de dados processe (busque, ordene e conte) muitas linhas que serão simplesmente descartadas, levando a uma degradação de performance proporcional ao valor do offset. 🐌"
+    },
+    {
+        "chapter": 7,
+        "question": "Qual é a abordagem fundamental da 'Keyset Pagination' (Paginação por Conjunto de Chaves ou Seek Method)?",
+        "options": [
+            "A) Usar a cláusula `OFFSET` de forma mais otimizada com um cálculo de 'keyset'.",
+            "B) Armazenar em cache todas as páginas na memória da aplicação.",
+            "C) Usar os valores da(s) coluna(s) de ordenação do último item da página anterior para construir uma cláusula `WHERE` que busque diretamente o início da próxima página.",
+            "D) Pré-calcular e armazenar os ROWIDs de cada linha de cada página possível."
+        ],
+        "correct_index": 2,
+        "explanation": "A Keyset Pagination evita o `OFFSET` usando uma condição `WHERE` baseada nos valores de ordenação do último registro da página anterior para 'saltar' diretamente para o próximo conjunto de registros, usando um índice. 🔑"
+    },
+    {
+        "chapter": 7,
+        "question": "Para que a Keyset Pagination funcione corretamente e de forma eficiente, quais são os pré-requisitos importantes para a cláusula `ORDER BY` e os índices?",
+        "options": [
+            "A) O `ORDER BY` deve usar apenas uma coluna e essa coluna não pode ser indexada.",
+            "B) O `ORDER BY` deve garantir uma ordem estável e única (frequentemente adicionando a chave primária como desempate), e deve haver um índice que suporte essa ordenação.",
+            "C) Não é necessário `ORDER BY`, pois o Keyset Pagination usa a ordem natural da tabela.",
+            "D) Apenas um índice do tipo Hash pode ser usado com Keyset Pagination."
+        ],
+        "correct_index": 1,
+        "explanation": "Uma ordenação estável e única é crucial para não pular ou repetir registros. Um índice que corresponda a essa ordenação é essencial para que o 'seek' (busca) para o próximo conjunto de chaves seja eficiente. 🔒"
+    },
+    {
+        "chapter": 7,
+        "question": "Qual é uma limitação comum da Keyset Pagination em termos de funcionalidade da interface do usuário (UI)?",
+        "options": [
+            "A) Ela não funciona bem com ordenação descendente (`DESC`).",
+            "B) É mais lenta que `OFFSET` para as primeiras páginas.",
+            "C) Torna difícil ou ineficiente para o usuário pular diretamente para uma página arbitrária (ex: ir da página 1 para a página 50) sem conhecer os 'cursores' intermediários.",
+            "D) Ela não pode ser usada com cláusulas `WHERE` complexas."
+        ],
+        "correct_index": 2,
+        "explanation": "Como a Keyset Pagination depende dos valores da página anterior para buscar a próxima, ela é inerentemente sequencial ('Próximo'/'Anterior'). Implementar um salto direto para um número de página específico é mais complexo. 🚶➡️🚶"
+    },
+    {
+        "chapter": 7,
+        "question": "Como a função de janela `ROW_NUMBER() OVER (ORDER BY ...)` é usada para implementar paginação?",
+        "options": [
+            "A) Ela substitui a cláusula `OFFSET` nativamente, tornando-a mais rápida.",
+            "B) Ela é usada em uma subconsulta (ou CTE) para atribuir um número sequencial a cada linha baseado na ordenação, e a consulta externa filtra por um intervalo desses números de linha.",
+            "C) Ela só pode ser usada para contar o número total de páginas, não para buscar os dados da página.",
+            "D) Ela cria um índice temporário baseado na numeração das linhas."
+        ],
+        "correct_index": 1,
+        "explanation": "Primeiro, todas as linhas (ou as que passam por um filtro inicial) são numeradas usando `ROW_NUMBER()`. Depois, uma consulta externa seleciona as linhas onde o número gerado está dentro do intervalo da página desejada (ex: `WHERE rn BETWEEN 21 AND 30`). 🔢"
+    },
+    {
+        "chapter": 7,
+        "question": "Comparando a paginação com `ROW_NUMBER()` e a Keyset Pagination para buscar páginas muito distantes do início, qual geralmente oferece melhor performance?",
+        "options": [
+            "A) `ROW_NUMBER()` é sempre mais rápido porque usa funções de janela otimizadas.",
+            "B) Ambas têm performance idêntica em todos os cenários.",
+            "C) Keyset Pagination é geralmente mais performática porque evita a necessidade de processar/numerar todas as linhas até a página desejada; ela 'salta' usando um índice.",
+            "D) Depende apenas do número de colunas selecionadas."
+        ],
+        "correct_index": 2,
+        "explanation": "Keyset Pagination tende a ser superior para paginação profunda, pois o custo é relativamente constante por página. `ROW_NUMBER()` ainda precisa, conceitualmente, processar ou enumerar todas as linhas até o final da janela da página desejada. 🚀 vs 🚶‍♀️...🚶‍♂️"
+    },
+    {
+        "chapter": 7,
+        "question": "Se uma consulta de paginação usa `LIMIT N` (ou `Workspace FIRST N ROWS`) e tem uma cláusula `ORDER BY`, por que é crucial que o `ORDER BY` seja suportado por um índice?",
+        "options": [
+            "A) Para garantir que N seja sempre um número par.",
+            "B) Para que o banco de dados possa ler os dados já ordenados e parar de buscar assim que N linhas forem encontradas, evitando um 'Sort Limited' (ordenar muitos dados para pegar poucos).",
+            "C) Porque `LIMIT` só funciona sintaticamente se houver um `ORDER BY` indexado.",
+            "D) Para reduzir o tamanho do índice, tornando o `LIMIT` mais rápido."
+        ],
+        "correct_index": 1,
+        "explanation": "Com um `ORDER BY` indexado, o SGBD pode pegar as N primeiras linhas diretamente da ordem do índice e parar. Sem isso, ele pode ter que buscar um grande conjunto de dados, ordená-lo completamente (operação custosa), e só então aplicar o `LIMIT`. 🛑"
+    },
+    {
+        "chapter": 7,
+        "question": "Para construir a cláusula `WHERE` da Keyset Pagination com `ORDER BY col_data DESC, col_id ASC`, se a última linha da página anterior foi `(data_X, id_Y)`, qual lógica é a correta para buscar a próxima página?",
+        "options": [
+            "A) `WHERE (col_data > data_X) OR (col_data = data_X AND col_id < id_Y)`",
+            "B) `WHERE (col_data < data_X) OR (col_data = data_X AND col_id > id_Y)`",
+            "C) `WHERE col_data < data_X AND col_id > id_Y`",
+            "D) `WHERE col_data > data_X AND col_id < id_Y`"
+        ],
+        "correct_index": 1,
+        "explanation": "Como `col_data` é `DESC`, queremos datas 'menores' (mais antigas). Se a data for igual, como `col_id` é `ASC`, queremos IDs 'maiores' para prosseguir. A forma `(col_data, col_id) < (data_X, id_Y)` em alguns SGBDs pode precisar ser escrita explicitamente como a opção B para ordens mistas. 👇🔼"
+    },
+    {
+        "chapter": 7,
+        "question": "Qual tipo de retorno do Spring Data JPA (`Page<T>` vs `Slice<T>`) pode ajudar a otimizar a paginação se a contagem total de elementos for custosa e não necessária para cada requisição?",
+        "options": [
+            "A) `Page<T>`, pois sempre inclui a contagem de forma otimizada.",
+            "B) `Slice<T>`, pois não executa a consulta de `COUNT(*)` para obter o total de elementos/páginas, apenas indica se há uma próxima 'fatia'.",
+            "C) Ambos são idênticos em termos das queries executadas.",
+            "D) Nenhum deles, a otimização de contagem deve ser feita manualmente."
+        ],
+        "correct_index": 1,
+        "explanation": "`Slice<T>` é uma otimização para cenários como 'scroll infinito' onde você só precisa saber se há mais dados para carregar, evitando a query de `COUNT(*)` que `Page<T>` executa. 🍕"
+    },
+    {
+        "chapter": 7,
+        "question": "Ao implementar paginação, qual é o principal benefício de usar uma 'coluna de desempate' única (como a chave primária) no final da cláusula `ORDER BY`?",
+        "options": [
+            "A) Torna a consulta mais curta e fácil de ler.",
+            "B) Garante uma ordem estável e única, prevenindo que registros sejam pulados ou repetidos entre as páginas, especialmente se as colunas primárias de ordenação tiverem valores duplicados.",
+            "C) Permite que o banco de dados use sempre um 'Index-Only Scan'.",
+            "D) Melhora a performance do `COUNT(*)`."
+        ],
+        "correct_index": 1,
+        "explanation": "Se as colunas principais do `ORDER BY` podem ter valores iguais, a ordem das linhas com esses valores iguais pode ser indeterminada. Adicionar uma coluna única (como a PK) no final do `ORDER BY` garante que a ordem total seja sempre a mesma, o que é crucial para a corretude da Keyset Pagination. ⚓"
+    },
+{
+        "chapter": 8,
+        "question": "Qual é o principal impacto nos índices quando você executa um `INSERT` em uma tabela com múltiplos índices?",
+        "options": [
+            "A) Nenhum, pois `INSERT`s só afetam os dados da tabela principal e os índices são atualizados em background sem custo.",
+            "B) Apenas o índice primário é atualizado; os demais são marcados como 'dirty' para uma atualização posterior.",
+            "C) Uma nova entrada deve ser adicionada em CADA um dos índices da tabela, além da inserção na própria tabela.",
+            "D) Os índices são temporariamente ignorados para acelerar a inserção e reconstruídos depois."
+        ],
+        "correct_index": 2,
+        "explanation": "Para cada linha inserida na tabela, o banco de dados precisa adicionar uma entrada correspondente em todos os índices existentes nessa tabela. Isso multiplica o trabalho de escrita. ✍️➡️📝📝📝"
+    },
+    {
+        "chapter": 8,
+        "question": "Ao fazer um `UPDATE` em uma linha, qual cenário geralmente resulta no MAIOR custo de performance relacionado a índices?",
+        "options": [
+            "A) Atualizar uma coluna que não faz parte de nenhum índice.",
+            "B) Atualizar uma coluna que faz parte de um ou mais índices.",
+            "C) O custo é sempre o mesmo, pois o `UPDATE` reescreve a linha inteira na tabela.",
+            "D) Atualizar a chave primária, mas apenas se ela não for referenciada por chaves estrangeiras."
+        ],
+        "correct_index": 1,
+        "explanation": "Atualizar uma coluna indexada é custoso porque o banco precisa, efetivamente, tratar como um 'delete' da entrada antiga do índice e um 'insert' da nova entrada, para cada índice que contém a coluna modificada. 🗑️➕"
+    },
+    {
+        "chapter": 8,
+        "question": "Qual é a principal vantagem de usar 'Bulk Inserts' (inserções em lote) em vez de inserir uma linha por vez em transações separadas?",
+        "options": [
+            "A) Garante que cada linha inserida seja validada individualmente por constraints, tornando o processo mais seguro.",
+            "B) Reduz o overhead de comunicação com o banco, o overhead de transação, e permite que o banco otimize as atualizações dos índices para o lote de linhas.",
+            "C) Ocupa menos espaço no log de transações porque apenas a primeira e a última linha são logadas.",
+            "D) Melhora a legibilidade do código SQL, mas não afeta a performance."
+        ],
+        "correct_index": 1,
+        "explanation": "Inserções em lote minimizam idas e vindas ao banco e permitem otimizações internas na atualização de índices, tornando o processo muito mais eficiente para múltiplas linhas. 🚚💨"
+    },
+    {
+        "chapter": 8,
+        "question": "Em tabelas com índice clusterizado (ex: InnoDB no MySQL, SQL Server) ou Index-Organized Tables (Oracle), qual prática de inserção pode ajudar a minimizar 'page splits'?",
+        "options": [
+            "A) Inserir dados em uma ordem completamente aleatória para distribuir a carga.",
+            "B) Inserir dados em uma ordem que se aproxime da ordem da chave do índice clusterizado.",
+            "C) Sempre inserir dados usando a cláusula `WITH (NOLOCK)`.",
+            "D) Inserir cada linha em uma transação separada."
+        ],
+        "correct_index": 1,
+        "explanation": "Inserir dados em uma ordem que corresponda à chave de clusterização permite que as novas linhas sejam adicionadas de forma mais sequencial nas páginas de dados, reduzindo a necessidade de dividir páginas existentes, o que é custoso. ➡️📄➡️📄"
+    },
+    {
+        "chapter": 8,
+        "question": "Para otimizar `UPDATE` e `DELETE`, qual é a recomendação mais crucial em relação à cláusula `WHERE`?",
+        "options": [
+            "A) Evitar o uso da cláusula `WHERE` para garantir que todas as linhas sejam processadas consistentemente.",
+            "B) Usar funções complexas na cláusula `WHERE` para flexibilidade.",
+            "C) Garantir que a cláusula `WHERE` possa utilizar eficientemente um índice para localizar rapidamente as linhas a serem modificadas ou deletadas.",
+            "D) Sempre usar subconsultas na cláusula `WHERE` para `UPDATE` e `DELETE`."
+        ],
+        "correct_index": 2,
+        "explanation": "Assim como nos `SELECT`s, a cláusula `WHERE` de `UPDATE`s e `DELETE`s deve ser SARGable e usar colunas indexadas para que o banco encontre as linhas alvo rapidamente, evitando full table scans. 🎯"
+    },
+    {
+        "chapter": 8,
+        "question": "Qual a diferença fundamental entre `DELETE FROM tabela;` (sem `WHERE`) e `TRUNCATE TABLE tabela;`?",
+        "options": [
+            "A) Nenhuma, ambas fazem exatamente a mesma coisa com a mesma performance.",
+            "B) `DELETE` é mais rápido pois não precisa logar, enquanto `TRUNCATE` loga cada linha.",
+            "C) `DELETE` remove linhas uma a uma (operacão DML, logada, dispara triggers), enquanto `TRUNCATE` remove todas as linhas de forma muito mais eficiente (geralmente DDL, minimamente logada, não dispara triggers `ON DELETE`).",
+            "D) `TRUNCATE` permite uma cláusula `WHERE`, enquanto `DELETE` sem `WHERE` apaga tudo."
+        ],
+        "correct_index": 2,
+        "explanation": "`TRUNCATE` é muito mais rápido para limpar uma tabela inteira, pois lida com as páginas de dados de forma mais direta, com menos overhead de log e sem disparar triggers de linha. Mas cuidado, geralmente não pode ser desfeito com `ROLLBACK`! 🧹💨"
+    },
+    {
+        "chapter": 8,
+        "question": "O que é o problema da 'atualização perdida' (lost update problem) em um ciclo de 'ler-modificar-escrever' concorrente?",
+        "options": [
+            "A) Quando um `UPDATE` falha e os dados são perdidos devido a um erro de disco.",
+            "B) Quando duas transações leem o mesmo dado, ambas o modificam, e a escrita da segunda transação sobrescreve a escrita da primeira, fazendo com que as modificações da primeira sejam perdidas.",
+            "C) Quando o log de transações perde o registro de um `UPDATE` bem-sucedido.",
+            "D) Quando um `UPDATE` é tão lento que o usuário desiste e perde os dados que queria salvar."
+        ],
+        "correct_index": 1,
+        "explanation": "Isso acontece quando transações concorrentes não coordenam suas atualizações, e uma sobrescreve o trabalho da outra sem perceber. 💔"
+    },
+    {
+        "chapter": 8,
+        "question": "Como o 'Optimistic Locking' (Travamento Otimista) geralmente funciona para prevenir o problema da atualização perdida?",
+        "options": [
+            "A) Bloqueando a linha com `SELECT ... FOR UPDATE` assim que ela é lida, impedindo qualquer outra transação de acessá-la.",
+            "B) Utilizando uma coluna de versão (ou timestamp); o `UPDATE` só é permitido se a versão da linha no banco não mudou desde que foi lida, e a versão é incrementada na atualização.",
+            "C) Serializando todas as transações que tentam acessar a mesma tabela.",
+            "D) Permitindo que as atualizações perdidas aconteçam, mas registrando-as para correção manual posterior."
+        ],
+        "correct_index": 1,
+        "explanation": "O Travamento Otimista assume que conflitos são raros. Ele verifica no momento do `UPDATE` se o dado foi alterado por outra transação (comparando a versão). Se sim, o `UPDATE` falha (afeta 0 linhas) e a aplicação lida com o conflito. ✅➡️❓➡️👍/👎"
+    },
+    {
+        "chapter": 8,
+        "question": "Qual a principal desvantagem do 'Pessimistic Locking' (ex: `SELECT ... FOR UPDATE`) em ambientes com alta concorrência?",
+        "options": [
+            "A) É mais complexo de implementar do que o Travamento Otimista.",
+            "B) Pode levar a deadlocks com mais frequência se não for usado corretamente.",
+            "C) Reduz a concorrência, pois as transações podem ter que esperar por longos períodos para que os locks nas linhas sejam liberados, causando gargalos.",
+            "D) Não é suportado por todos os bancos de dados SQL padrão."
+        ],
+        "correct_index": 2,
+        "explanation": "Ao bloquear linhas por períodos mais longos, o Travamento Pessimista pode fazer com que muitas transações fiquem enfileiradas esperando, o que limita quantas operações podem ocorrer simultaneamente. ⏳🚶🚶🚶"
+    },
+    {
+        "chapter": 8,
+        "question": "Se um ORM (como Hibernate/JPA) atualiza uma entidade enviando todos os seus campos mapeados na instrução `UPDATE SQL`, mesmo que apenas um campo tenha mudado, por que isso pode ser um problema de performance, conforme discutido no livro?",
+        "options": [
+            "A) Isso não é um problema, pois os SGBDs modernos ignoram campos não alterados no `SET`.",
+            "B) Pode causar a atualização desnecessária de colunas indexadas, levando à manutenção custosa desses índices, além de maior tráfego de rede e log.",
+            "C) Principalmente porque aumenta o tamanho do objeto entidade na memória da aplicação.",
+            "D) Apenas se a tabela tiver triggers `ON UPDATE` para cada coluna."
+        ],
+        "correct_index": 1,
+        "explanation": "Se colunas indexadas são incluídas no `SET` de um `UPDATE` (mesmo que seus valores não tenham mudado em relação ao que já está no banco), o SGBD pode ainda ter que fazer trabalho de manutenção nesses índices, o que é ineficiente. Configurações como `@DynamicUpdate` (Hibernate) ou o uso de JPQL `UPDATE`s podem mitigar isso. 🛠️🐌"
     }
 ]
+
+
+
