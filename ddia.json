@@ -1,0 +1,242 @@
+[
+    {
+        "chapter": 1,
+        "question": "Qual é a definição correta de um 'fault' (defeito) em um sistema?",
+        "options": [
+            "A) Quando o sistema como um todo para de prover seu serviço ao usuário.",
+            "B) Um componente do sistema se desviando de sua especificação.",
+            "C) Qualquer erro retornado pela aplicação ao cliente final.",
+            "D) Uma lentidão inesperada na resposta de uma requisição."
+        ],
+        "correct_index": 1,
+        "explanation": "Um 'fault' é uma falha interna de um componente, enquanto a 'failure' (pane) é quando o sistema como um todo para de funcionar para o usuário. 🔌"
+    },
+    {
+        "chapter": 1,
+        "question": "A principal estratégia para lidar com falhas de hardware, como a quebra de um disco rígido, é a:",
+        "options": [
+            "A) Otimização do software.",
+            "B) Redundância de componentes.",
+            "C) Contratação de um seguro.",
+            "D) Manutenção preventiva diária."
+        ],
+        "correct_index": 1,
+        "explanation": "A redundância, como usar discos em RAID ou fontes de alimentação duplas, é a principal forma de garantir que a falha de um componente de hardware não derrube a máquina inteira. 💿"
+    },
+    {
+        "chapter": 1,
+        "question": "O que é 'Escalabilidade' (Scalability)?",
+        "options": [
+            "A) A capacidade de um sistema nunca apresentar erros.",
+            "B) A capacidade de um sistema de lidar com o aumento de sua carga de trabalho.",
+            "C) A velocidade com que uma nova funcionalidade pode ser desenvolvida.",
+            "D) A facilidade com que um novo desenvolvedor entende o código."
+        ],
+        "correct_index": 1,
+        "explanation": "Escalabilidade é sobre projetar sistemas que conseguem manter a performance e a confiabilidade mesmo quando a carga (número de usuários, requisições, etc.) aumenta. 📈"
+    },
+    {
+        "chapter": 1,
+        "question": "Por que usar a latência 'média' para medir a performance de um sistema pode ser enganoso?",
+        "options": [
+            "A) Porque a média é muito difícil de calcular em tempo real.",
+            "B) Porque ela não representa a experiência do usuário típico.",
+            "C) Porque ela esconde os 'outliers', ou seja, a péssima experiência de uma minoria de usuários.",
+            "D) Porque a maioria dos sistemas de monitoramento não consegue calculá-la."
+        ],
+        "correct_index": 2,
+        "explanation": "A média é facilmente influenciada por muitos valores rápidos e pode esconder o fato de que uma pequena porcentagem de requisições está extremamente lenta, que é o que os percentis (p99) revelam. 🎭"
+    },
+    {
+        "chapter": 1,
+        "question": "O que o termo 'Amplificação da Latência de Cauda' (Tail Latency Amplification) descreve?",
+        "options": [
+            "A) O efeito onde uma única chamada lenta a um microsserviço torna toda a requisição do usuário final lenta.",
+            "B) O aumento da latência que ocorre apenas no final do dia, quando o sistema está mais carregado.",
+            "C) Um algoritmo para amplificar o sinal de rede e reduzir a latência.",
+            "D) O processo de adicionar mais máquinas para diminuir a latência do sistema."
+        ],
+        "correct_index": 0,
+        "explanation": "Quando uma única ação do usuário depende de muitas chamadas paralelas, a chance de encontrar pelo menos uma chamada lenta (na 'cauda' da distribuição) aumenta, tornando a experiência geral lenta. 🔗"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual é o princípio de design por trás da 'Operabilidade' (Operability)?",
+        "options": [
+            "A) Otimizar o código para usar o mínimo de memória possível.",
+            "B) Escrever o código mais elegante e abstrato.",
+            "C) Garantir que o sistema seja o mais rápido possível.",
+            "D) Facilitar a vida da equipe de operações para manter o sistema funcionando."
+        ],
+        "correct_index": 3,
+        "explanation": "Operabilidade é sobre projetar sistemas com empatia, tornando-os fáceis de monitorar, diagnosticar, e gerenciar pela equipe que cuida deles em produção. 🛠️"
+    },
+    {
+        "chapter": 1,
+        "question": "A 'explosão do espaço de estados' é um sintoma de qual problema de design?",
+        "options": [
+            "A) Baixa confiabilidade de hardware.",
+            "B) Excesso de complexidade acidental.",
+            "C) Problemas de escalabilidade de escrita.",
+            "D) Falta de documentação."
+        ],
+        "correct_index": 1,
+        "explanation": "A complexidade acidental, criada por muitas funcionalidades e configurações independentes, faz com que o número de estados possíveis do sistema cresça exponencialmente, tornando-o difícil de entender e testar. 💥"
+    },
+    {
+        "chapter": 1,
+        "question": "Na analogia 'Gado vs. Pets', o que um servidor tratado como 'Gado' (Cattle) representa?",
+        "options": [
+            "A) Um servidor mainframe caro e insubstituível.",
+            "B) Um servidor único que recebe cuidados e manutenção constantes para nunca falhar.",
+            "C) Um servidor descartável em um grande cluster, que pode ser substituído automaticamente se falhar.",
+            "D) Um servidor físico com a maior capacidade de processamento possível."
+        ],
+        "correct_index": 2,
+        "explanation": "A filosofia 'Gado' trata servidores como recursos descartáveis e substituíveis, focando na resiliência do sistema (o rebanho) em vez da confiabilidade de uma máquina individual (o pet). 🐄"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual é a principal vantagem de um sistema com boa 'Evolvabilidade' (Evolvability)?",
+        "options": [
+            "A) Ele nunca precisa de atualizações de segurança.",
+            "B) Ele é fácil de adaptar a novos requisitos e mudanças no futuro.",
+            "C) Ele consome menos recursos de CPU e memória que outros sistemas.",
+            "D) Ele responde mais rápido às requisições dos usuários."
+        ],
+        "correct_index": 1,
+        "explanation": "Evolvabilidade (ou facilidade de modificação) é sobre projetar sistemas cuja arquitetura facilita a introdução de novas funcionalidades e a adaptação a mudanças. 🌱"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual é a melhor forma de agregar dados de tempo de resposta de múltiplos servidores?",
+        "options": [
+            "A) Tirar a média dos tempos de resposta médios de cada servidor.",
+            "B) Tirar a média dos p99 de cada servidor.",
+            "C) Somar os histogramas de latência de cada servidor.",
+            "D) Escolher o valor do servidor mais rápido como referência."
+        ],
+        "correct_index": 2,
+        "explanation": "Tirar a média de percentis é matematicamente incorreto. A forma correta é combinar os histogramas de cada fonte para criar uma distribuição geral e então calcular os percentis do todo. 📊"
+    },
+    {
+        "chapter": 1,
+        "question": "Um 'soft delete' (deleção lógica) é um exemplo prático de qual princípio de design?",
+        "options": [
+            "A) Escalonamento vertical.",
+            "B) Permitir recuperação rápida e fácil de erros humanos.",
+            "C) Otimização de performance de leitura.",
+            "D) Redundância de hardware."
+        ],
+        "correct_index": 1,
+        "explanation": "Ao usar uma flag 'deletado' em vez de um DELETE real, o sistema permite que uma exclusão acidental seja revertida facilmente, minimizando o impacto do erro humano. ♻️"
+    },
+    {
+        "chapter": 1,
+        "question": "O que o percentil p95 de tempo de resposta representa?",
+        "options": [
+            "A) O tempo de resposta do usuário mais rápido de todos.",
+            "B) A experiência de 95% dos usuários.",
+            "C) O tempo de resposta no qual 95% das requisições são mais rápidas.",
+            "D) O tempo médio de resposta, excluindo os 5% mais lentos."
+        ],
+        "correct_index": 2,
+        "explanation": "p95 significa que 95% das requisições foram mais rápidas que este valor, e os 5% restantes foram mais lentos. Ele define o limite da experiência para a grande maioria dos usuários. 🕒"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual a principal diferença entre falhas de hardware e erros de software?",
+        "options": [
+            "A) Falhas de hardware são mais fáceis de corrigir do que erros de software.",
+            "B) Erros de software são sempre causados por erros humanos.",
+            "C) Falhas de hardware são aleatórias, enquanto erros de software são sistemáticos e podem afetar todos os nós.",
+            "D) Falhas de hardware causam mais downtime do que erros de software."
+        ],
+        "correct_index": 2,
+        "explanation": "Enquanto falhas de hardware são geralmente independentes, um bug no software (erro sistemático) pode causar uma falha em cascata em todos os servidores que rodam aquele código. 🐛"
+    },
+    {
+        "chapter": 1,
+        "question": "O que é um 'rolling upgrade'?",
+        "options": [
+            "A) Uma forma de escalonamento vertical que aumenta a memória da máquina.",
+            "B) Um processo de deploy onde as instâncias são atualizadas uma a uma, sem downtime do serviço.",
+            "C) Um backup que 'rola' de um dia para o outro, substituindo o anterior.",
+            "D) Uma atualização de segurança que é revertida ('rolled back') automaticamente se falhar."
+        ],
+        "correct_index": 1,
+        "explanation": "Um 'rolling upgrade' é uma vantagem operacional de sistemas que toleram falhas de máquina, permitindo atualizações graduais sem interromper o serviço como um todo. 🔄"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual é a principal ferramenta para remover a 'complexidade acidental' de um sistema?",
+        "options": [
+            "A) Adicionar mais hardware.",
+            "B) Usar uma linguagem de programação mais rápida.",
+            "C) Criar boas abstrações.",
+            "D) Contratar mais desenvolvedores."
+        ],
+        "correct_index": 2,
+        "explanation": "Uma boa abstração esconde detalhes complexos de implementação por trás de uma fachada simples, permitindo que os desenvolvedores gerenciem a complexidade e foquem na lógica de negócio. 💡"
+    },
+    {
+        "chapter": 1,
+        "question": "No contexto de operabilidade, o que é um 'sandbox'?",
+        "options": [
+            "A) Um ambiente de produção com segurança reforçada.",
+            "B) Um ambiente de teste seguro onde se pode experimentar sem afetar usuários reais.",
+            "C) Um tipo de contêiner de software para isolar processos.",
+            "D) Uma ferramenta de monitoramento para detectar anomalias."
+        ],
+        "correct_index": 1,
+        "explanation": "Um sandbox permite que engenheiros e até usuários explorem e testem funcionalidades, idealmente com dados reais (anonimizados), sem o risco de quebrar o ambiente de produção. 🔬"
+    },
+    {
+        "chapter": 1,
+        "question": "No exemplo do Twitter, por que a abordagem de montar a timeline na leitura (*fan-out on read*) é usada para celebridades?",
+        "options": [
+            "A) Porque celebridades têm menos seguidores e o processamento é mais rápido.",
+            "B) Para evitar a 'tempestade de escrita' de atualizar milhões de timelines a cada tweet.",
+            "C) Porque a timeline de celebridades é armazenada em um tipo diferente de banco de dados.",
+            "D) Para permitir que a latência para celebridades seja maior do que para usuários comuns."
+        ],
+        "correct_index": 1,
+        "explanation": "Fazer o 'push' de um tweet para dezenas de milhões de seguidores seria um problema de escalabilidade de escrita. O 'pull' na leitura é uma estratégia para lidar com essa carga extrema.  cele"
+    },
+    {
+        "chapter": 1,
+        "question": "Um sistema que implementa um padrão 'Fallback' (ex: usar um cálculo manual quando um serviço externo de cotação falha) está demonstrando qual qualidade?",
+        "options": [
+            "A) Simplicidade, pois reduz o número de componentes.",
+            "B) Tolerância a falhas, pois continua operando de forma degradada.",
+            "C) Escalabilidade vertical, pois usa mais CPU.",
+            "D) Evolvabilidade, pois é fácil de mudar no futuro."
+        ],
+        "correct_index": 1,
+        "explanation": "O padrão Fallback é um mecanismo de tolerância a falhas que contém o dano da falha de uma dependência, permitindo que o sistema continue funcionando, mesmo que de forma degradada. ☂️"
+    },
+    {
+        "chapter": 1,
+        "question": "Qual é a principal característica de um sistema *stateless* que o torna fácil de escalar?",
+        "options": [
+            "A) Ele não precisa de banco de dados.",
+            "B) Qualquer requisição pode ser atendida por qualquer servidor, pois não há estado local.",
+            "C) Ele consome menos memória RAM do que um sistema stateful.",
+            "D) Ele é inerentemente mais seguro contra ataques."
+        ],
+        "correct_index": 1,
+        "explanation": "Como não há estado local para gerenciar, é trivial adicionar ou remover servidores em um sistema stateless, tornando o escalonamento horizontal muito mais simples. ↔️"
+    },
+    {
+        "chapter": 1,
+        "question": "O padrão 'Bulkhead' (anteparas) ajuda a prevenir qual tipo de problema?",
+        "options": [
+            "A) Corrupção de dados no banco de dados.",
+            "B) A falha de um componente se espalhando e causando a falha do sistema inteiro.",
+            "C) Aumento do custo com a infraestrutura na nuvem.",
+            "D) Lentidão no processo de deploy de novas versões."
+        ],
+        "correct_index": 1,
+        "explanation": "Assim como as anteparas em um navio, o padrão Bulkhead isola os recursos para que uma falha em uma parte do sistema (ex: um pool de conexões sobrecarregado) não derrube todo o resto. 🚢"
+    }
+]
